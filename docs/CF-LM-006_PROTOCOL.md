@@ -64,7 +64,7 @@ the base `w=1.0` relational distances are approximately:
 
 `D_Psi(R_C,R_L) = 3.692552048108993`
 
-`D_Psi(R_D,R_L) = 4.193710...`.
+`D_Psi(R_D,R_L) = 4.193860811866271`.
 
 All are well above the frozen distinctness threshold `0.70`.
 
@@ -117,7 +117,15 @@ At `w=1.0`, the broken-route projected distance is predicted to be approximately
 
 `0.048012141014796256`.
 
-For the rich full-coordinate observer over contexts `A,B,C,D`, the expected pairwise distances are comfortably nonzero; the smallest is predicted above `0.13`.
+For the rich full-coordinate observer over contexts `A,B,C,D`, predicted pairwise distances are approximately:
+
+`D_rich(R_C,R_D) = 0.3469322523450798`
+
+`D_rich(R_C,R_L) = 1.6270684321044664`
+
+`D_rich(R_D,R_L) = 1.656077327943506`.
+
+All clear the frozen `epsilon_rich=0.13` threshold.
 
 ## PASS
 
