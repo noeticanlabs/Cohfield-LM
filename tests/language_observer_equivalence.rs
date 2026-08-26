@@ -165,8 +165,7 @@ fn cf_lm_003_matches_preregistered_preimplementation_cross_check() {
 
     assert!((psi_distance - 0.061_531_831_442_227_035).abs() < EPS_CROSSCHECK);
     assert!(
-        (cd.psi[SurfaceSymbol::C.index()][SurfaceSymbol::D.index()] - 1.868_030_811_690_309)
-            .abs()
+        (cd.psi[SurfaceSymbol::C.index()][SurfaceSymbol::D.index()] - 1.868_030_811_690_309).abs()
             < EPS_CROSSCHECK
     );
     assert!(
@@ -180,8 +179,7 @@ fn cf_lm_003_matches_preregistered_preimplementation_cross_check() {
             < EPS_CROSSCHECK
     );
     assert!(
-        (dc.psi[SurfaceSymbol::D.index()][SurfaceSymbol::C.index()] - 1.868_030_811_690_309)
-            .abs()
+        (dc.psi[SurfaceSymbol::D.index()][SurfaceSymbol::C.index()] - 1.868_030_811_690_309).abs()
             < EPS_CROSSCHECK
     );
     assert!(restricted_distance <= EPS_FLOOR);
