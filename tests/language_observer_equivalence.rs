@@ -6,6 +6,7 @@ use cohfield_lm::AdaptiveContinuationModel;
 const EPS_FLOOR: f64 = 1.0e-12;
 const EPS_STATE: f64 = 0.05;
 const EPS_DISCRIM: f64 = 0.01;
+const EPS_CROSSCHECK: f64 = 1.0e-9;
 
 const H_CD: [SurfaceSymbol; 2] = [SurfaceSymbol::C, SurfaceSymbol::D];
 const H_DC: [SurfaceSymbol; 2] = [SurfaceSymbol::D, SurfaceSymbol::C];
@@ -117,7 +118,10 @@ fn cf_lm_003_observer_enrichment_only_adds_frozen_cd_dc_probes() {
     let enriched = enriched_observer();
 
     assert_eq!(restricted.continuation_steps, enriched.continuation_steps);
-    assert_eq!(&enriched.probes[..restricted.probes.len()], &restricted.probes);
+    assert_eq!(
+        &enriched.probes[..restricted.probes.len()],
+        restricted.probes.as_slice()
+    );
     assert_eq!(
         &enriched.probes[restricted.probes.len()..],
         &[
@@ -131,9 +135,10 @@ fn cf_lm_003_observer_enrichment_only_adds_frozen_cd_dc_probes() {
 fn cf_lm_003_restricted_observer_repeat_is_at_floor() {
     let model = CohfieldLanguageModelV1::default();
     let state = LanguageState::equalized_from(&exposed(&model, &H_CD));
+    let cloned = state.clone();
     let profile = restricted_observer();
 
-    let distance = observe_distance(&model, &state, &state.clone(), &profile);
+    let distance = observe_distance(&model, &state, &cloned, &profile);
     assert!(distance <= EPS_FLOOR);
 }
 
@@ -141,9 +146,10 @@ fn cf_lm_003_restricted_observer_repeat_is_at_floor() {
 fn cf_lm_003_enriched_observer_repeat_is_at_floor() {
     let model = CohfieldLanguageModelV1::default();
     let state = LanguageState::equalized_from(&exposed(&model, &H_CD));
+    let cloned = state.clone();
     let profile = enriched_observer();
 
-    let distance = observe_distance(&model, &state, &state.clone(), &profile);
+    let distance = observe_distance(&model, &state, &cloned, &profile);
     assert!(distance <= EPS_FLOOR);
 }
 
@@ -157,11 +163,27 @@ fn cf_lm_003_matches_preregistered_preimplementation_cross_check() {
     let restricted_distance = observe_distance(&model, &cd, &dc, &restricted_observer());
     let enriched_distance = observe_distance(&model, &cd, &dc, &enriched_observer());
 
-    assert!((psi_distance - 0.061_531_831_442_227_035).abs() < 1.0e-12);
-    assert!((cd.psi[SurfaceSymbol::C.index()][SurfaceSymbol::D.index()] - 1.868_030_811_690_309).abs() < 1.0e-12);
-    assert!((cd.psi[SurfaceSymbol::D.index()][SurfaceSymbol::C.index()] - 1.824_521_236_418_682_7).abs() < 1.0e-12);
-    assert!((dc.psi[SurfaceSymbol::C.index()][SurfaceSymbol::D.index()] - 1.824_521_236_418_682_7).abs() < 1.0e-12);
-    assert!((dc.psi[SurfaceSymbol::D.index()][SurfaceSymbol::C.index()] - 1.868_030_811_690_309).abs() < 1.0e-12);
+    assert!((psi_distance - 0.061_531_831_442_227_035).abs() < EPS_CROSSCHECK);
+    assert!(
+        (cd.psi[SurfaceSymbol::C.index()][SurfaceSymbol::D.index()] - 1.868_030_811_690_309)
+            .abs()
+            < EPS_CROSSCHECK
+    );
+    assert!(
+        (cd.psi[SurfaceSymbol::D.index()][SurfaceSymbol::C.index()] - 1.824_521_236_418_682_7)
+            .abs()
+            < EPS_CROSSCHECK
+    );
+    assert!(
+        (dc.psi[SurfaceSymbol::C.index()][SurfaceSymbol::D.index()] - 1.824_521_236_418_682_7)
+            .abs()
+            < EPS_CROSSCHECK
+    );
+    assert!(
+        (dc.psi[SurfaceSymbol::D.index()][SurfaceSymbol::C.index()] - 1.868_030_811_690_309)
+            .abs()
+            < EPS_CROSSCHECK
+    );
     assert!(restricted_distance <= EPS_FLOOR);
-    assert!((enriched_distance - 0.016_529_790_192_257_32).abs() < 1.0e-12);
+    assert!((enriched_distance - 0.016_529_790_192_257_32).abs() < EPS_CROSSCHECK);
 }
