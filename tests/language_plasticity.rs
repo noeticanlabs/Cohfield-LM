@@ -118,7 +118,10 @@ fn cf_lm_001_direct_psi_replacement_collapses_response_difference() {
     let ri = model.observe(&intervened, &profile).unwrap();
     let rb = model.observe(&b, &profile).unwrap();
     let distance = CohfieldLanguageModelV1::response_distance(&ri, &rb).unwrap();
-    assert!(distance <= EPSILON_FLOOR, "post-intervention D_R={distance}");
+    assert!(
+        distance <= EPSILON_FLOOR,
+        "post-intervention D_R={distance}"
+    );
 }
 
 #[test]
