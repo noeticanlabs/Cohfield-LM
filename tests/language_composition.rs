@@ -35,26 +35,18 @@ fn counts(pattern: &[SurfaceSymbol], repeats: usize) -> [usize; 4] {
     out
 }
 
-fn exposed(
-    model: &CohfieldLanguageModelV1,
-    pattern: &[SurfaceSymbol],
-) -> LanguageState {
+fn exposed(model: &CohfieldLanguageModelV1, pattern: &[SurfaceSymbol]) -> LanguageState {
     model
         .expose(&LanguageState::initial(), pattern, 32)
         .expect("frozen exposure must be valid")
 }
 
-fn two_hop_probe(
-    model: &CohfieldLanguageModelV1,
-    state: &LanguageState,
-) -> (f64, f64) {
+fn two_hop_probe(model: &CohfieldLanguageModelV1, state: &LanguageState) -> (f64, f64) {
     let equalized = LanguageState::equalized_from(state);
     let after_a = model
         .evolve(&equalized, &LanguageInput::symbol(SurfaceSymbol::A), 1.0)
         .unwrap();
-    let after_one_zero = model
-        .evolve(&after_a, &LanguageInput::zero(), 1.0)
-        .unwrap();
+    let after_one_zero = model.evolve(&after_a, &LanguageInput::zero(), 1.0).unwrap();
     let after_two_zero = model
         .evolve(&after_one_zero, &LanguageInput::zero(), 1.0)
         .unwrap();
@@ -158,8 +150,14 @@ fn cf_lm_002_matches_preregistered_preimplementation_cross_check() {
     let (chain_b1, chain_c2) = two_hop_probe(&model, &chain);
     let (broken_b1, broken_c2) = two_hop_probe(&model, &broken);
 
-    assert!((chain.psi[SurfaceSymbol::A.index()][SurfaceSymbol::B.index()] - 0.633_019_445_9).abs() < 1.0e-9);
-    assert!((chain.psi[SurfaceSymbol::B.index()][SurfaceSymbol::C.index()] - 0.672_572_063_8).abs() < 1.0e-9);
+    assert!(
+        (chain.psi[SurfaceSymbol::A.index()][SurfaceSymbol::B.index()] - 0.633_019_445_9).abs()
+            < 1.0e-9
+    );
+    assert!(
+        (chain.psi[SurfaceSymbol::B.index()][SurfaceSymbol::C.index()] - 0.672_572_063_8).abs()
+            < 1.0e-9
+    );
     assert!((chain_b1 - 0.063_301_944_6).abs() < 1.0e-9);
     assert!((chain_c2 - 0.008_515_023_9).abs() < 1.0e-9);
     assert!((broken_b1 - 0.063_301_944_6).abs() < 1.0e-9);
