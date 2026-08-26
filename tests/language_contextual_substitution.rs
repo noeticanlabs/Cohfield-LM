@@ -156,10 +156,7 @@ fn full_substitution(c_host: &LanguageState, learned_d: &LanguageState) -> Langu
     state
 }
 
-fn first_hop_only_substitution(
-    c_host: &LanguageState,
-    learned_d: &LanguageState,
-) -> LanguageState {
+fn first_hop_only_substitution(c_host: &LanguageState, learned_d: &LanguageState) -> LanguageState {
     let mut state = c_host.clone();
     state.psi[SurfaceSymbol::A.index()][SurfaceSymbol::C.index()] = 0.0;
     state.psi[SurfaceSymbol::A.index()][SurfaceSymbol::D.index()] =
@@ -184,18 +181,8 @@ fn cf_lm_005_histories_are_matched_and_host_edge_is_unseen() {
     assert_eq!(counts(&H_D, 64), [64, 64, 64, 64]);
     assert_eq!(counts(&H_C, 64), counts(&H_D, 64));
 
-    assert!(!has_adjacency(
-        &H_C,
-        64,
-        SurfaceSymbol::B,
-        SurfaceSymbol::A
-    ));
-    assert!(!has_adjacency(
-        &H_D,
-        64,
-        SurfaceSymbol::B,
-        SurfaceSymbol::A
-    ));
+    assert!(!has_adjacency(&H_C, 64, SurfaceSymbol::B, SurfaceSymbol::A));
+    assert!(!has_adjacency(&H_D, 64, SurfaceSymbol::B, SurfaceSymbol::A));
 
     let model = CohfieldLanguageModelV1::default();
     let (learned_c, learned_d) = learned_pair(&model);
@@ -227,8 +214,14 @@ fn cf_lm_005_route_extraction_uses_only_frozen_learned_route_weights() {
         learned_d.psi[SurfaceSymbol::D.index()][SurfaceSymbol::B.index()]
     );
 
-    assert_eq!(host_c.psi.iter().flatten().filter(|&&v| v != 0.0).count(), 3);
-    assert_eq!(host_d.psi.iter().flatten().filter(|&&v| v != 0.0).count(), 3);
+    assert_eq!(
+        host_c.psi.iter().flatten().filter(|&&v| v != 0.0).count(),
+        3
+    );
+    assert_eq!(
+        host_d.psi.iter().flatten().filter(|&&v| v != 0.0).count(),
+        3
+    );
 }
 
 #[test]
@@ -241,7 +234,10 @@ fn cf_lm_005_host_states_remain_exact_different_across_family() {
         let host_d = host_from_learned(&learned_c, &learned_d, RouteKind::D, host_weight);
         let distance = CohfieldLanguageModelV1::psi_frobenius_distance(&host_c, &host_d);
 
-        assert!(distance > EPS_STATE, "host {host_weight} state distance {distance}");
+        assert!(
+            distance > EPS_STATE,
+            "host {host_weight} state distance {distance}"
+        );
         assert_ne!(host_c.psi, host_d.psi);
         assert_eq!(
             host_c.psi[SurfaceSymbol::B.index()][SurfaceSymbol::A.index()],
@@ -263,7 +259,10 @@ fn cf_lm_005_projected_consequence_is_preserved_across_unseen_host_family() {
             &projected_response(&model, &host_d),
         );
 
-        assert!(distance <= EPS_FLOOR, "host {host_weight} projected distance {distance}");
+        assert!(
+            distance <= EPS_FLOOR,
+            "host {host_weight} projected distance {distance}"
+        );
     }
 }
 
@@ -284,7 +283,10 @@ fn cf_lm_005_full_route_substitution_is_explicit_and_preserves_consequence() {
         &projected_response(&model, &host_c),
         &projected_response(&model, &substituted),
     );
-    assert!(distance <= EPS_FLOOR, "full substitution distance {distance}");
+    assert!(
+        distance <= EPS_FLOOR,
+        "full substitution distance {distance}"
+    );
 }
 
 #[test]
