@@ -29,7 +29,10 @@ impl AdaptiveContinuationModel for ToyDomain {
     type Response = f64;
     type Error = &'static str;
 
-    fn roles(&self, state: &Self::State) -> StateRoles<Self::Fast, Self::LocalCondition, Self::RelationalConfiguration> {
+    fn roles(
+        &self,
+        state: &Self::State,
+    ) -> StateRoles<Self::Fast, Self::LocalCondition, Self::RelationalConfiguration> {
         StateRoles {
             fast: state.fast,
             local_condition: state.theta,
