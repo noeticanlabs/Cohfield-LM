@@ -7,7 +7,10 @@ fn signed_margin_refines_binary_survival() {
 
     assert!(binary_survival(near));
     assert!(binary_survival(far));
-    assert_ne!(near, far, "the margin preserves information the threshold discards");
+    assert_ne!(
+        near, far,
+        "the margin preserves information the threshold discards"
+    );
 }
 
 #[test]
