@@ -116,9 +116,7 @@ fn full_a_response(model: &CohfieldLanguageModelV1, state: &LanguageState) -> Ve
         .unwrap();
     out.extend_from_slice(&local.x);
     for _ in 0..4 {
-        local = model
-            .evolve(&local, &LanguageInput::zero(), 1.0)
-            .unwrap();
+        local = model.evolve(&local, &LanguageInput::zero(), 1.0).unwrap();
         out.extend_from_slice(&local.x);
     }
     out
@@ -288,26 +286,22 @@ fn cf_lm_004_matches_preregistered_preimplementation_cross_check() {
 
     assert!((d_psi - 2.812_778_851_911_623_2).abs() < 1.0e-9);
     assert!(
-        (c_path.psi[SurfaceSymbol::A.index()][SurfaceSymbol::C.index()]
-            - 0.984_081_650_505_525_9)
+        (c_path.psi[SurfaceSymbol::A.index()][SurfaceSymbol::C.index()] - 0.984_081_650_505_525_9)
             .abs()
             < 1.0e-9
     );
     assert!(
-        (c_path.psi[SurfaceSymbol::C.index()][SurfaceSymbol::B.index()]
-            - 1.004_164_949_495_434_6)
+        (c_path.psi[SurfaceSymbol::C.index()][SurfaceSymbol::B.index()] - 1.004_164_949_495_434_6)
             .abs()
             < 1.0e-9
     );
     assert!(
-        (d_path.psi[SurfaceSymbol::A.index()][SurfaceSymbol::D.index()]
-            - 0.984_081_650_505_525_9)
+        (d_path.psi[SurfaceSymbol::A.index()][SurfaceSymbol::D.index()] - 0.984_081_650_505_525_9)
             .abs()
             < 1.0e-9
     );
     assert!(
-        (d_path.psi[SurfaceSymbol::D.index()][SurfaceSymbol::B.index()]
-            - 1.004_164_949_495_434_6)
+        (d_path.psi[SurfaceSymbol::D.index()][SurfaceSymbol::B.index()] - 1.004_164_949_495_434_6)
             .abs()
             < 1.0e-9
     );
