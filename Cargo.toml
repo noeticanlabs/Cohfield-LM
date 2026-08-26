@@ -1,0 +1,12 @@
+[package]
+name = "cohfield-lm"
+version = "0.1.0"
+edition = "2021"
+description = "Domain-neutral CohField Adaptive Continuation Profile reference runtime"
+license = "Apache-2.0"
+
+[lib]
+name = "cohfield_lm"
+path = "src/lib.rs"
+
+[dependencies]
