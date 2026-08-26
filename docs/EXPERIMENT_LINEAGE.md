@@ -23,3 +23,32 @@ Only mechanisms that survive abstraction from infrastructure-specific equations 
 Infrastructure-only details remain downstream profile material, including graph incidence matrices, conductance equations, electrical flow, fixed three-node topology, and the specific co-flow update law.
 
 `Q_rm` remains an optional counterfactual profile until v0.11 defines its robustness/domain of validity.
+
+## Executable conformance status
+
+### CF-ACP-000
+
+Local base-conformance gate passed at:
+
+`782fc4efcd6df64a2ed06e87cd5cdac1dc01b4df`
+
+The base passed formatting, Clippy with warnings denied, and 9/9 contract tests.
+
+### CF-ACP-INFRA-001
+
+Local infrastructure-profile conformance gate passed at:
+
+`a48207168b7aaa5488b94cfb85ccbce2cf326275`
+
+The generic runtime plus downstream infrastructure profile passed formatting, Clippy with warnings denied, and 18/18 tests covering the v0.01-v0.06 reconstruction scope.
+
+### CF-ACP-INFRA-002
+
+Current status: **local conformance pending**.
+
+This stage separates two evidence classes:
+
+- executable retention reconstruction for the v0.08/v0.10 forgetting mathematics; and
+- result-record conformance for v0.07-v0.10 outcomes whose complete historical raw input ledger is not currently present.
+
+Exact historical replay of v0.07-v0.10 must not be claimed until the missing evaluator, neutral configuration, perturbation generator, and per-rollout records are recovered or independently reconstructed under an explicit amendment.
