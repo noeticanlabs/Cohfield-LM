@@ -156,7 +156,6 @@ impl CohfieldLanguageModelV1 {
                 .flat_map(|row| row.iter())
                 .all(|v| v.is_finite())
             && state.theta == [1.0; 4]
-            && self.valid_parameters()
     }
 
     fn valid_parameters(&self) -> bool {
@@ -169,7 +168,14 @@ impl CohfieldLanguageModelV1 {
             && self.psi_gain >= 0.0
     }
 
-    fn step(&self, state: &LanguageState, input: &LanguageInput) -> Result<LanguageState, LanguageError> {
+    fn step(
+        &self,
+        state: &LanguageState,
+        input: &LanguageInput,
+    ) -> Result<LanguageState, LanguageError> {
+        if !self.valid_parameters() {
+            return Err(LanguageError::InvalidParameter);
+        }
         if !self.valid_state(state) || input.activity.iter().any(|v| !v.is_finite()) {
             return Err(LanguageError::InvalidState);
         }
@@ -177,8 +183,8 @@ impl CohfieldLanguageModelV1 {
         let mut next = state.clone();
         let mut relational = [0.0; 4];
         for (target, value) in relational.iter_mut().enumerate() {
-            for source in 0..4 {
-                *value += state.psi[source][target] * state.x[source];
+            for (source, source_activity) in state.x.iter().enumerate() {
+                *value += state.psi[source][target] * source_activity;
             }
         }
 
@@ -196,6 +202,9 @@ impl CohfieldLanguageModelV1 {
         pattern: &[SurfaceSymbol],
         repeats: usize,
     ) -> Result<LanguageState, LanguageError> {
+        if !self.valid_parameters() {
+            return Err(LanguageError::InvalidParameter);
+        }
         if pattern.is_empty() || repeats == 0 {
             return Err(LanguageError::EmptyExposure);
         }
@@ -295,11 +304,11 @@ impl AdaptiveContinuationModel for CohfieldLanguageModelV1 {
         state: &Self::State,
         experience: &Self::Experience,
     ) -> Result<Self::State, Self::Error> {
-        if !self.valid_state(state) {
-            return Err(LanguageError::InvalidState);
-        }
         if !self.valid_parameters() {
             return Err(LanguageError::InvalidParameter);
+        }
+        if !self.valid_state(state) {
+            return Err(LanguageError::InvalidState);
         }
 
         let mut next = state.clone();
@@ -321,6 +330,9 @@ impl AdaptiveContinuationModel for CohfieldLanguageModelV1 {
         state: &Self::State,
         profile: &Self::ObservationProfile,
     ) -> Result<Self::Response, Self::Error> {
+        if !self.valid_parameters() {
+            return Err(LanguageError::InvalidParameter);
+        }
         if !self.valid_state(state) {
             return Err(LanguageError::InvalidState);
         }
@@ -328,7 +340,8 @@ impl AdaptiveContinuationModel for CohfieldLanguageModelV1 {
             return Err(LanguageError::EmptyProbeFamily);
         }
 
-        let mut vectors = Vec::with_capacity(profile.probes.len() * (2 + profile.continuation_steps));
+        let mut vectors =
+            Vec::with_capacity(profile.probes.len() * (2 + profile.continuation_steps));
         for probe in &profile.probes {
             let mut local = LanguageState::equalized_from(state);
             for &symbol in probe {
