@@ -140,11 +140,7 @@ fn projected_distance(
     )
 }
 
-fn related(
-    model: &CohfieldLanguageModelV1,
-    left: &LanguageState,
-    right: &LanguageState,
-) -> bool {
+fn related(model: &CohfieldLanguageModelV1, left: &LanguageState, right: &LanguageState) -> bool {
     HOST_WEIGHTS
         .iter()
         .all(|&weight| projected_distance(model, left, right, weight) <= EPS_FLOOR)
@@ -183,9 +179,18 @@ fn cf_lm_006_carrier_uses_only_frozen_learned_route_and_loop_weights() {
         learned_loop.psi[SurfaceSymbol::D.index()][SurfaceSymbol::D.index()]
     );
 
-    assert_eq!(core_c.psi.iter().flatten().filter(|&&v| v != 0.0).count(), 2);
-    assert_eq!(core_d.psi.iter().flatten().filter(|&&v| v != 0.0).count(), 2);
-    assert_eq!(core_l.psi.iter().flatten().filter(|&&v| v != 0.0).count(), 3);
+    assert_eq!(
+        core_c.psi.iter().flatten().filter(|&&v| v != 0.0).count(),
+        2
+    );
+    assert_eq!(
+        core_d.psi.iter().flatten().filter(|&&v| v != 0.0).count(),
+        2
+    );
+    assert_eq!(
+        core_l.psi.iter().flatten().filter(|&&v| v != 0.0).count(),
+        3
+    );
 }
 
 #[test]
@@ -199,7 +204,10 @@ fn cf_lm_006_all_carrier_members_remain_exact_different() {
             let left = host(left_core, 1.0);
             let right = host(right_core, 1.0);
             let distance = CohfieldLanguageModelV1::psi_frobenius_distance(&left, &right);
-            assert!(distance > EPS_DISTINCT, "pair ({i},{j}) distance {distance}");
+            assert!(
+                distance > EPS_DISTINCT,
+                "pair ({i},{j}) distance {distance}"
+            );
             assert_ne!(left.psi, right.psi);
         }
     }
@@ -278,7 +286,10 @@ fn cf_lm_006_rich_observer_distinguishes_every_exact_different_pair() {
                 &rich_response(&model, &left),
                 &rich_response(&model, &right),
             );
-            assert!(distance > EPS_RICH, "pair ({i},{j}) rich distance {distance}");
+            assert!(
+                distance > EPS_RICH,
+                "pair ({i},{j}) rich distance {distance}"
+            );
         }
     }
 }
@@ -335,9 +346,18 @@ fn cf_lm_006_matches_preregistered_preimplementation_cross_check() {
     assert!((psi_cl - 3.692_552_048_108_993).abs() < REGRESSION_TOL);
     assert!((psi_dl - 4.193_860_811_866_271).abs() < REGRESSION_TOL);
 
-    let rich_cd = euclidean(&rich_response(&model, &host_c), &rich_response(&model, &host_d));
-    let rich_cl = euclidean(&rich_response(&model, &host_c), &rich_response(&model, &host_l));
-    let rich_dl = euclidean(&rich_response(&model, &host_d), &rich_response(&model, &host_l));
+    let rich_cd = euclidean(
+        &rich_response(&model, &host_c),
+        &rich_response(&model, &host_d),
+    );
+    let rich_cl = euclidean(
+        &rich_response(&model, &host_c),
+        &rich_response(&model, &host_l),
+    );
+    let rich_dl = euclidean(
+        &rich_response(&model, &host_d),
+        &rich_response(&model, &host_l),
+    );
 
     assert!((rich_cd - 0.346_932_252_345_079_8).abs() < REGRESSION_TOL);
     assert!((rich_cl - 1.627_068_432_104_466_4).abs() < REGRESSION_TOL);
