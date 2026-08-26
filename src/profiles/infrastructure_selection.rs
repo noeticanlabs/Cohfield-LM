@@ -58,8 +58,7 @@ impl AffineForgettingProfile {
         }
 
         let t = (score - self.score_min) / (self.score_max - self.score_min);
-        Ok(self.forgetting_at_min
-            + t * (self.forgetting_at_max - self.forgetting_at_min))
+        Ok(self.forgetting_at_min + t * (self.forgetting_at_max - self.forgetting_at_min))
     }
 
     pub fn retention_ratio(&self, score: f64, steps: usize) -> Result<f64, RetentionError> {

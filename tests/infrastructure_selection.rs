@@ -71,9 +71,9 @@ fn v009_binary_survival_record_is_only_partially_discriminative() {
 
 #[test]
 fn v010_recovery_margin_record_restores_three_way_endogenous_ordering() {
-    let q_useful = 0.411920;
-    let q_neutral = 0.407113;
-    let q_harmful = 0.389890;
+    let q_useful: f64 = 0.411920;
+    let q_neutral: f64 = 0.407113;
+    let q_harmful: f64 = 0.389890;
 
     assert!(q_useful > q_neutral);
     assert!(q_neutral > q_harmful);
