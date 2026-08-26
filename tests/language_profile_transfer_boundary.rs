@@ -168,11 +168,8 @@ fn ablate_latent_loop(core_l: &LanguageState) -> LanguageState {
 
 #[test]
 fn cf_lm_007_cross_relay_host_edges_are_unseen_in_all_source_histories() {
-    let sources: [(&[SurfaceSymbol], usize); 3] = [
-        (&H_C[..], 64),
-        (&H_D[..], 64),
-        (&H_LOOP[..], 64),
-    ];
+    let sources: [(&[SurfaceSymbol], usize); 3] =
+        [(&H_C[..], 64), (&H_D[..], 64), (&H_LOOP[..], 64)];
 
     for (pattern, repeats) in sources {
         assert!(!has_adjacency(
@@ -268,9 +265,8 @@ fn cf_lm_007_latent_split_grows_strictly_with_cross_host_strength() {
     let learned = learned_sources(&model);
     let [core_c, _core_d, core_l] = carrier(&learned.0, &learned.1, &learned.2);
 
-    let distances = CROSS_WEIGHTS.map(|weight| {
-        projected_distance(&model, &core_c, &core_l, weight, LONG_HORIZON)
-    });
+    let distances = CROSS_WEIGHTS
+        .map(|weight| projected_distance(&model, &core_c, &core_l, weight, LONG_HORIZON));
 
     for window in distances.windows(2) {
         assert!(window[1] > window[0]);
@@ -341,13 +337,7 @@ fn cf_lm_007_construction_and_observation_are_deterministic_to_floor() {
         assert_eq!(left_state.psi, right_state.psi);
         for weight in CROSS_WEIGHTS {
             for horizon in [SHORT_HORIZON, LONG_HORIZON] {
-                let distance = projected_distance(
-                    &model,
-                    left_state,
-                    right_state,
-                    weight,
-                    horizon,
-                );
+                let distance = projected_distance(&model, left_state, right_state, weight, horizon);
                 assert!(distance <= EPS_FLOOR);
             }
         }
