@@ -194,10 +194,10 @@ fn cf_lm_006_all_carrier_members_remain_exact_different() {
     let (learned_c, learned_d, learned_loop) = learned_sources(&model);
     let carrier = carrier(&learned_c, &learned_d, &learned_loop);
 
-    for i in 0..carrier.len() {
-        for j in (i + 1)..carrier.len() {
-            let left = host(&carrier[i], 1.0);
-            let right = host(&carrier[j], 1.0);
+    for (i, left_core) in carrier.iter().enumerate() {
+        for (j, right_core) in carrier.iter().enumerate().skip(i + 1) {
+            let left = host(left_core, 1.0);
+            let right = host(right_core, 1.0);
             let distance = CohfieldLanguageModelV1::psi_frobenius_distance(&left, &right);
             assert!(distance > EPS_DISTINCT, "pair ({i},{j}) distance {distance}");
             assert_ne!(left.psi, right.psi);
@@ -222,10 +222,10 @@ fn cf_lm_006_relation_is_symmetric_on_all_distinct_carrier_pairs() {
     let (learned_c, learned_d, learned_loop) = learned_sources(&model);
     let carrier = carrier(&learned_c, &learned_d, &learned_loop);
 
-    for i in 0..carrier.len() {
-        for j in (i + 1)..carrier.len() {
-            assert!(related(&model, &carrier[i], &carrier[j]));
-            assert!(related(&model, &carrier[j], &carrier[i]));
+    for (i, left) in carrier.iter().enumerate() {
+        for right in carrier.iter().skip(i + 1) {
+            assert!(related(&model, left, right));
+            assert!(related(&model, right, left));
         }
     }
 }
@@ -252,9 +252,9 @@ fn cf_lm_006_pairwise_relation_holds_separately_under_every_host_composition() {
     let carrier = carrier(&learned_c, &learned_d, &learned_loop);
 
     for weight in HOST_WEIGHTS {
-        for i in 0..carrier.len() {
-            for j in (i + 1)..carrier.len() {
-                let distance = projected_distance(&model, &carrier[i], &carrier[j], weight);
+        for (i, left) in carrier.iter().enumerate() {
+            for (j, right) in carrier.iter().enumerate().skip(i + 1) {
+                let distance = projected_distance(&model, left, right, weight);
                 assert!(
                     distance <= EPS_FLOOR,
                     "host {weight} pair ({i},{j}) projected distance {distance}"
@@ -270,10 +270,10 @@ fn cf_lm_006_rich_observer_distinguishes_every_exact_different_pair() {
     let (learned_c, learned_d, learned_loop) = learned_sources(&model);
     let carrier = carrier(&learned_c, &learned_d, &learned_loop);
 
-    for i in 0..carrier.len() {
-        for j in (i + 1)..carrier.len() {
-            let left = host(&carrier[i], 1.0);
-            let right = host(&carrier[j], 1.0);
+    for (i, left_core) in carrier.iter().enumerate() {
+        for (j, right_core) in carrier.iter().enumerate().skip(i + 1) {
+            let left = host(left_core, 1.0);
+            let right = host(right_core, 1.0);
             let distance = euclidean(
                 &rich_response(&model, &left),
                 &rich_response(&model, &right),
@@ -308,9 +308,9 @@ fn cf_lm_006_carrier_and_relation_evaluation_are_deterministic_to_floor() {
     let left = carrier(&left_sources.0, &left_sources.1, &left_sources.2);
     let right = carrier(&right_sources.0, &right_sources.1, &right_sources.2);
 
-    for index in 0..left.len() {
-        assert_eq!(left[index].psi, right[index].psi);
-        assert!(related(&model, &left[index], &right[index]));
+    for (left_state, right_state) in left.iter().zip(right.iter()) {
+        assert_eq!(left_state.psi, right_state.psi);
+        assert!(related(&model, left_state, right_state));
     }
 }
 
