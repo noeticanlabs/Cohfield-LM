@@ -120,11 +120,11 @@ impl InfrastructureModel {
 
     fn effective_edge_response(&self, state: &InfrastructureState) -> [[f64; 3]; 3] {
         let mut h = [[0.0; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                h[i][j] = self.alpha_psi * state.psi[i][j];
+        for (i, row) in h.iter_mut().enumerate() {
+            for (j, value) in row.iter_mut().enumerate() {
+                *value =
+                    self.alpha_psi * state.psi[i][j] + if i == j { state.theta[i] } else { 0.0 };
             }
-            h[i][i] += state.theta[i];
         }
         h
     }
@@ -373,7 +373,7 @@ impl DifferentialResponse for InfrastructureModel {
         let response_dim = profile.probes.len() * 3;
         let mut jacobian = vec![vec![0.0; 3]; response_dim];
 
-        for coordinate in 0..3 {
+        for (coordinate, _) in state.theta.iter().enumerate() {
             let mut plus = state.clone();
             let mut minus = state.clone();
             plus.theta[coordinate] += eps;
@@ -384,8 +384,8 @@ impl DifferentialResponse for InfrastructureModel {
 
             let r_plus = self.observe(&plus, profile)?.flattened();
             let r_minus = self.observe(&minus, profile)?.flattened();
-            for row in 0..response_dim {
-                jacobian[row][coordinate] = (r_plus[row] - r_minus[row]) / (2.0 * eps);
+            for (row, column) in jacobian.iter_mut().enumerate() {
+                column[coordinate] = (r_plus[row] - r_minus[row]) / (2.0 * eps);
             }
         }
 

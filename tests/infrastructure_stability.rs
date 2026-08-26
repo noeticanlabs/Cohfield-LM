@@ -89,17 +89,11 @@ fn coflow_adaptation_from_zero_configuration_produces_psd_rank_one_structure() {
         let dot = v[0] * q[0] + v[1] * q[1] + v[2] * q[2];
         let expected = experience.psi_gain * dot * dot;
         let quadratic = v[0]
-            * (adapted.psi[0][0] * v[0]
-                + adapted.psi[0][1] * v[1]
-                + adapted.psi[0][2] * v[2])
+            * (adapted.psi[0][0] * v[0] + adapted.psi[0][1] * v[1] + adapted.psi[0][2] * v[2])
             + v[1]
-                * (adapted.psi[1][0] * v[0]
-                    + adapted.psi[1][1] * v[1]
-                    + adapted.psi[1][2] * v[2])
+                * (adapted.psi[1][0] * v[0] + adapted.psi[1][1] * v[1] + adapted.psi[1][2] * v[2])
             + v[2]
-                * (adapted.psi[2][0] * v[0]
-                    + adapted.psi[2][1] * v[1]
-                    + adapted.psi[2][2] * v[2]);
+                * (adapted.psi[2][0] * v[0] + adapted.psi[2][1] * v[1] + adapted.psi[2][2] * v[2]);
         assert!((quadratic - expected).abs() < 1.0e-12);
         assert!(quadratic >= 0.0);
     }

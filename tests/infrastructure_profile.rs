@@ -183,8 +183,8 @@ fn v003_pullback_metric_is_positive_definite_and_locally_predictive() {
     let delta = [0.01, -0.007, 0.005];
     let predicted = quadratic_form(&delta, &g).sqrt();
     let mut displaced = base.clone();
-    for i in 0..3 {
-        displaced.theta[i] += delta[i];
+    for (theta, &d) in displaced.theta.iter_mut().zip(delta.iter()) {
+        *theta += d;
     }
 
     let actual = InfrastructureModel::response_l2(
@@ -213,8 +213,8 @@ fn v003_metric_state_dependence_reproduces_reported_relative_changes() {
     let expected = [(0.25, 0.114), (0.50, 0.234), (0.75, 0.364)];
     for (gamma, target) in expected {
         let mut moved = base.clone();
-        for i in 0..3 {
-            moved.theta[i] += gamma * direction[i];
+        for (theta, &d) in moved.theta.iter_mut().zip(direction.iter()) {
+            *theta += gamma * d;
         }
         let g = metric(&model, &moved, &profile);
         let relative = frobenius_distance(&g, &g0) / base_norm;
