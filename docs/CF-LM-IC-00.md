@@ -1,6 +1,6 @@
 # CF-LM-IC-00 — CohField Language Profile Implementation Contract Root
 
-Status: **Draft v0.1 — staged before language implementation**
+Status: **Draft v0.1 — frozen before language implementation; dependency evidence updated after INFRA-002 closure**
 
 Parent profile: `CF-LM-000`
 
@@ -8,8 +8,7 @@ Parent executable evidence:
 
 - CF-ACP-000: `782fc4efcd6df64a2ed06e87cd5cdac1dc01b4df`
 - CF-ACP-INFRA-001: `a48207168b7aaa5488b94cfb85ccbce2cf326275`
-
-CF-ACP-INFRA-002 remains pending local disposition.
+- CF-ACP-INFRA-002: `b6f3b6a2164eaae17120e107cc03494bb52133cf`
 
 ## 1. Contract purpose
 
@@ -208,9 +207,11 @@ No output-generation subsystem is part of CF-LM-001.
 
 CF-LM-IC-00 remains draft until:
 
-1. INFRA-002 receives a recorded disposition;
+1. INFRA-002 disposition is recorded at `b6f3b6a2164eaae17120e107cc03494bb52133cf`;
 2. `epsilon_floor` and `epsilon_R` are preregistered;
 3. controlled language exposure histories and fresh probe family are frozen;
 4. a Rust language profile implements the inherited base trait without modifying CF-ACP core semantics;
 5. all positive and negative CF-LM-001 controls execute locally;
 6. the resulting PASS/FAIL disposition is recorded without post-result threshold tuning.
+
+Items 1–4 are now satisfied by the recorded upstream evidence, frozen CF-LM-001 protocol, and implementation branch. Items 5–6 remain open until local conformance execution and disposition.
