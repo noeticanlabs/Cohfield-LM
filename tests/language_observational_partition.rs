@@ -35,73 +35,35 @@ struct Profile {
 }
 
 const SHORT_PROFILES: [Profile; 5] = [
-    Profile {
-        host: HostProfile::Baseline,
-        horizon: 4,
-    },
-    Profile {
-        host: HostProfile::BackToA(1.0),
-        horizon: 4,
-    },
-    Profile {
-        host: HostProfile::CrossRelay(0.5),
-        horizon: 4,
-    },
-    Profile {
-        host: HostProfile::CrossRelay(1.0),
-        horizon: 4,
-    },
-    Profile {
-        host: HostProfile::CrossRelay(2.0),
-        horizon: 4,
-    },
+    Profile { host: HostProfile::Baseline, horizon: 4 },
+    Profile { host: HostProfile::BackToA(1.0), horizon: 4 },
+    Profile { host: HostProfile::CrossRelay(0.5), horizon: 4 },
+    Profile { host: HostProfile::CrossRelay(1.0), horizon: 4 },
+    Profile { host: HostProfile::CrossRelay(2.0), horizon: 4 },
 ];
 
 const FULL_PROFILES: [Profile; 8] = [
-    SHORT_PROFILES[0],
-    SHORT_PROFILES[1],
-    SHORT_PROFILES[2],
-    SHORT_PROFILES[3],
-    SHORT_PROFILES[4],
-    Profile {
-        host: HostProfile::CrossRelay(0.5),
-        horizon: 10,
-    },
-    Profile {
-        host: HostProfile::CrossRelay(1.0),
-        horizon: 10,
-    },
-    Profile {
-        host: HostProfile::CrossRelay(2.0),
-        horizon: 10,
-    },
+    Profile { host: HostProfile::Baseline, horizon: 4 },
+    Profile { host: HostProfile::BackToA(1.0), horizon: 4 },
+    Profile { host: HostProfile::CrossRelay(0.5), horizon: 4 },
+    Profile { host: HostProfile::CrossRelay(1.0), horizon: 4 },
+    Profile { host: HostProfile::CrossRelay(2.0), horizon: 4 },
+    Profile { host: HostProfile::CrossRelay(0.5), horizon: 10 },
+    Profile { host: HostProfile::CrossRelay(1.0), horizon: 10 },
+    Profile { host: HostProfile::CrossRelay(2.0), horizon: 10 },
 ];
 
-fn exposed(
-    model: &CohfieldLanguageModelV1,
-    pattern: &[SurfaceSymbol],
-    repeats: usize,
-) -> LanguageState {
+fn exposed(model: &CohfieldLanguageModelV1, pattern: &[SurfaceSymbol]) -> LanguageState {
     model
-        .expose(&LanguageState::initial(), pattern, repeats)
+        .expose(&LanguageState::initial(), pattern, 64)
         .expect("frozen exposure must be valid")
 }
 
-fn learned_sources(
-    model: &CohfieldLanguageModelV1,
-) -> (LanguageState, LanguageState, LanguageState) {
-    (
-        exposed(model, &H_C, 64),
-        exposed(model, &H_D, 64),
-        exposed(model, &H_LOOP, 64),
-    )
-}
+fn fixture(model: &CohfieldLanguageModelV1) -> [LanguageState; 6] {
+    let learned_c = exposed(model, &H_C);
+    let learned_d = exposed(model, &H_D);
+    let learned_loop = exposed(model, &H_LOOP);
 
-fn canonical_carrier(
-    learned_c: &LanguageState,
-    learned_d: &LanguageState,
-    learned_loop: &LanguageState,
-) -> [LanguageState; 6] {
     let mut core_c = LanguageState::initial();
     core_c.psi[SurfaceSymbol::A.index()][SurfaceSymbol::C.index()] =
         learned_c.psi[SurfaceSymbol::A.index()][SurfaceSymbol::C.index()];
@@ -120,22 +82,11 @@ fn canonical_carrier(
 
     let mut cut_c = core_c.clone();
     cut_c.psi[SurfaceSymbol::C.index()][SurfaceSymbol::B.index()] = 0.0;
-
     let mut cut_d = core_d.clone();
     cut_d.psi[SurfaceSymbol::D.index()][SurfaceSymbol::B.index()] = 0.0;
-
     let zero = LanguageState::initial();
 
-    [core_c, core_d, core_l, cut_c, cut_d, zero]
-}
-
-fn blinded_carrier(
-    learned_c: &LanguageState,
-    learned_d: &LanguageState,
-    learned_loop: &LanguageState,
-) -> [LanguageState; 6] {
-    let [core_c, core_d, core_l, cut_c, cut_d, zero] =
-        canonical_carrier(learned_c, learned_d, learned_loop);
+    // Frozen blinded slot order: [R_L, R_D_cut, R_C, R_0, R_D, R_C_cut].
     [core_l, cut_d, core_c, zero, core_d, cut_c]
 }
 
@@ -173,13 +124,13 @@ fn run_context(
     records
 }
 
-fn projected_profile_response(
+fn profile_response(
     model: &CohfieldLanguageModelV1,
     state: &LanguageState,
     profile: Profile,
 ) -> Vec<f64> {
     let hosted = apply_host(state, profile.host);
-    let mut out = Vec::with_capacity(4 * (1 + profile.horizon));
+    let mut out = Vec::with_capacity(4 * (profile.horizon + 1));
     for context in [SurfaceSymbol::A, SurfaceSymbol::B] {
         for x in run_context(model, &hosted, context, profile.horizon) {
             out.push(x[SurfaceSymbol::A.index()]);
@@ -194,30 +145,10 @@ fn response_family(
     state: &LanguageState,
     profiles: &[Profile],
 ) -> Vec<f64> {
-    let mut out = Vec::new();
-    for &profile in profiles {
-        out.extend(projected_profile_response(model, state, profile));
-    }
-    out
-}
-
-fn rich_response(model: &CohfieldLanguageModelV1, state: &LanguageState) -> Vec<f64> {
-    let mut out = Vec::new();
-    for context in SurfaceSymbol::ALL {
-        for x in run_context(model, state, context, 10) {
-            out.extend_from_slice(&x);
-        }
-    }
-    out
-}
-
-fn euclidean(left: &[f64], right: &[f64]) -> f64 {
-    assert_eq!(left.len(), right.len());
-    left.iter()
-        .zip(right.iter())
-        .map(|(a, b)| (a - b) * (a - b))
-        .sum::<f64>()
-        .sqrt()
+    profiles
+        .iter()
+        .flat_map(|&profile| profile_response(model, state, profile))
+        .collect()
 }
 
 fn signatures(
@@ -234,15 +165,11 @@ fn signatures(
 fn partition_by_exact_response(signatures: &[Vec<f64>]) -> Vec<Vec<usize>> {
     let mut classes: Vec<Vec<usize>> = Vec::new();
     for (index, signature) in signatures.iter().enumerate() {
-        let mut matched = false;
-        for class in &mut classes {
-            if signatures[class[0]].as_slice() == signature.as_slice() {
-                class.push(index);
-                matched = true;
-                break;
-            }
-        }
-        if !matched {
+        if let Some(class) = classes.iter_mut().find(|class| {
+            signatures[class[0]].as_slice() == signature.as_slice()
+        }) {
+            class.push(index);
+        } else {
             classes.push(vec![index]);
         }
     }
@@ -265,19 +192,33 @@ fn same_class_pairs(partition: &[Vec<usize>]) -> Vec<(usize, usize)> {
     pairs
 }
 
+fn rich_response(model: &CohfieldLanguageModelV1, state: &LanguageState) -> Vec<f64> {
+    let mut out = Vec::new();
+    for context in SurfaceSymbol::ALL {
+        for x in run_context(model, state, context, 10) {
+            out.extend_from_slice(&x);
+        }
+    }
+    out
+}
+
+fn euclidean(left: &[f64], right: &[f64]) -> f64 {
+    assert_eq!(left.len(), right.len());
+    left.iter()
+        .zip(right)
+        .map(|(a, b)| (a - b) * (a - b))
+        .sum::<f64>()
+        .sqrt()
+}
+
 #[test]
 fn cf_lm_008_carrier_is_six_exact_different_states() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
-
+    let states = fixture(&model);
     for (left_index, left) in states.iter().enumerate() {
         for (right_index, right) in states.iter().enumerate().skip(left_index + 1) {
             let distance = CohfieldLanguageModelV1::psi_frobenius_distance(left, right);
-            assert!(
-                distance > EPS_STATE,
-                "pair ({left_index},{right_index}) state distance {distance}"
-            );
+            assert!(distance > EPS_STATE, "pair ({left_index},{right_index}) state distance {distance}");
             assert_ne!(left.psi, right.psi);
         }
     }
@@ -286,48 +227,37 @@ fn cf_lm_008_carrier_is_six_exact_different_states() {
 #[test]
 fn cf_lm_008_short_profiles_recover_preregistered_partition_from_responses_only() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
-    let sigs = signatures(&model, &states, &SHORT_PROFILES);
-    let partition = partition_by_exact_response(&sigs);
-
+    let states = fixture(&model);
+    let partition = partition_by_exact_response(&signatures(&model, &states, &SHORT_PROFILES));
     assert_eq!(partition, vec![vec![0, 2, 4], vec![1, 3, 5]]);
 }
 
 #[test]
-fn cf_lm_008_full_profiles_recover_preregistered_refined_partition_from_responses_only() {
+fn cf_lm_008_full_profiles_recover_preregistered_partition_from_responses_only() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
-    let sigs = signatures(&model, &states, &FULL_PROFILES);
-    let partition = partition_by_exact_response(&sigs);
-
+    let states = fixture(&model);
+    let partition = partition_by_exact_response(&signatures(&model, &states, &FULL_PROFILES));
     assert_eq!(partition, vec![vec![0], vec![1, 3, 5], vec![2, 4]]);
 }
 
 #[test]
-fn cf_lm_008_partition_class_sizes_match_frozen_discovery_targets() {
+fn cf_lm_008_partition_class_sizes_match_frozen_targets() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
-
+    let states = fixture(&model);
     let short = partition_by_exact_response(&signatures(&model, &states, &SHORT_PROFILES));
     let full = partition_by_exact_response(&signatures(&model, &states, &FULL_PROFILES));
-
     let mut short_sizes: Vec<_> = short.iter().map(Vec::len).collect();
     let mut full_sizes: Vec<_> = full.iter().map(Vec::len).collect();
     short_sizes.sort_unstable();
     full_sizes.sort_unstable();
-
     assert_eq!(short_sizes, vec![3, 3]);
     assert_eq!(full_sizes, vec![1, 2, 3]);
 }
 
 #[test]
-fn cf_lm_008_full_profile_partition_strictly_refines_short_partition_without_merges() {
+fn cf_lm_008_full_partition_strictly_refines_short_without_merges() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
+    let states = fixture(&model);
     let short = partition_by_exact_response(&signatures(&model, &states, &SHORT_PROFILES));
     let full = partition_by_exact_response(&signatures(&model, &states, &FULL_PROFILES));
 
@@ -338,20 +268,26 @@ fn cf_lm_008_full_profile_partition_strictly_refines_short_partition_without_mer
     }
     assert!(full.len() > short.len());
 
-    for left in 0..states.len() {
-        for right in (left + 1)..states.len() {
-            let short_same = short.iter().any(|class| class.contains(&left) && class.contains(&right));
-            let full_same = full.iter().any(|class| class.contains(&left) && class.contains(&right));
-            assert!(!full_same || short_same, "enrichment merged pair ({left},{right})");
+    for (left_index, _) in states.iter().enumerate() {
+        for (right_index, _) in states.iter().enumerate().skip(left_index + 1) {
+            let short_same = short
+                .iter()
+                .any(|class| class.contains(&left_index) && class.contains(&right_index));
+            let full_same = full
+                .iter()
+                .any(|class| class.contains(&left_index) && class.contains(&right_index));
+            assert!(
+                !full_same || short_same,
+                "enrichment merged pair ({left_index},{right_index})"
+            );
         }
     }
 }
 
 #[test]
-fn cf_lm_008_same_class_members_remain_exact_different_under_both_partitions() {
+fn cf_lm_008_same_class_members_remain_exact_different() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
+    let states = fixture(&model);
     let short = partition_by_exact_response(&signatures(&model, &states, &SHORT_PROFILES));
     let full = partition_by_exact_response(&signatures(&model, &states, &FULL_PROFILES));
 
@@ -368,49 +304,39 @@ fn cf_lm_008_same_class_members_remain_exact_different_under_both_partitions() {
 }
 
 #[test]
-fn cf_lm_008_rich_observer_distinguishes_every_same_class_exact_different_pair() {
+fn cf_lm_008_rich_observer_distinguishes_every_short_class_pair() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
+    let states = fixture(&model);
     let short = partition_by_exact_response(&signatures(&model, &states, &SHORT_PROFILES));
-
     for (left, right) in same_class_pairs(&short) {
         let distance = euclidean(
             &rich_response(&model, &states[left]),
             &rich_response(&model, &states[right]),
         );
-        assert!(
-            distance > EPS_RICH,
-            "same-class pair ({left},{right}) rich distance {distance}"
-        );
+        assert!(distance > EPS_RICH, "pair ({left},{right}) rich distance {distance}");
     }
 }
 
 #[test]
-fn cf_lm_008_partitioning_is_independent_of_state_structure_after_signature_construction() {
+fn cf_lm_008_partition_function_uses_only_response_vectors() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
+    let states = fixture(&model);
     let sigs = signatures(&model, &states, &FULL_PROFILES);
-
-    let partition_a = partition_by_exact_response(&sigs);
-    let partition_b = partition_by_exact_response(&sigs.clone());
-    assert_eq!(partition_a, partition_b);
+    assert_eq!(
+        partition_by_exact_response(&sigs),
+        partition_by_exact_response(&sigs)
+    );
 }
 
 #[test]
 fn cf_lm_008_construction_signatures_and_partitions_are_deterministic() {
     let model = CohfieldLanguageModelV1::default();
-    let left_learned = learned_sources(&model);
-    let right_learned = learned_sources(&model);
-    let left = blinded_carrier(&left_learned.0, &left_learned.1, &left_learned.2);
-    let right = blinded_carrier(&right_learned.0, &right_learned.1, &right_learned.2);
-
+    let left = fixture(&model);
+    let right = fixture(&model);
     let left_short = signatures(&model, &left, &SHORT_PROFILES);
     let right_short = signatures(&model, &right, &SHORT_PROFILES);
     let left_full = signatures(&model, &left, &FULL_PROFILES);
     let right_full = signatures(&model, &right, &FULL_PROFILES);
-
     assert_eq!(left_short, right_short);
     assert_eq!(left_full, right_full);
     assert_eq!(
@@ -426,8 +352,7 @@ fn cf_lm_008_construction_signatures_and_partitions_are_deterministic() {
 #[test]
 fn cf_lm_008_matches_preregistered_response_family_cross_checks() {
     let model = CohfieldLanguageModelV1::default();
-    let learned = learned_sources(&model);
-    let states = blinded_carrier(&learned.0, &learned.1, &learned.2);
+    let states = fixture(&model);
     let short = signatures(&model, &states, &SHORT_PROFILES);
     let full = signatures(&model, &states, &FULL_PROFILES);
 
