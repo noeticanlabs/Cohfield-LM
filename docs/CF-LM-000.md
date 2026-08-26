@@ -1,12 +1,12 @@
 # CF-LM-000 — CohField Language Domain Profile
 
-Status: **Staged pre-implementation contract v0.1**
+Status: **Preregistered language-domain profile v0.1 — frozen before implementation; dependency evidence updated after INFRA-002 closure**
 
 Parent evidence:
 
 - CF-ACP-000 base conformance: `782fc4efcd6df64a2ed06e87cd5cdac1dc01b4df`
 - CF-ACP-INFRA-001 reconstruction conformance: `a48207168b7aaa5488b94cfb85ccbce2cf326275`
-- CF-ACP-INFRA-002 selective-retention closure: **pending local evidence**
+- CF-ACP-INFRA-002 selective-retention closure: `b6f3b6a2164eaae17120e107cc03494bb52133cf`
 
 ## 1. Purpose
 
@@ -210,13 +210,13 @@ Any later language candidate that may become authoritative must still enter the 
 
 ## 10. Dependency gate
 
-CF-LM-000 may be specified and reviewed against the verified CF-ACP/INFRA-001 parent.
+CF-LM-000 is now grounded on verified CF-ACP-000, INFRA-001, and INFRA-002 evidence.
 
 Language implementation MUST NOT be classified as conformance-verified until:
 
-1. CF-ACP-INFRA-002 receives its local evidence disposition or is explicitly waived by amendment as non-blocking;
-2. CF-LM-IC-00 is closed for CF-LM-001;
-3. CF-LM-001 local tests pass without post-result tolerance tuning.
+1. CF-LM-IC-00 is closed for CF-LM-001;
+2. CF-LM-001 local tests pass without post-result tolerance tuning;
+3. the CF-LM-001 PASS/FAIL disposition is recorded separately from upstream infrastructure evidence.
 
 This preserves:
 
