@@ -3,7 +3,7 @@ use crate::{AdaptiveContinuationModel, StateRoles};
 use super::language::{
     LanguageError, LanguageInput, LanguageObservationProfile, LanguageResponse, SurfaceSymbol,
 };
-use super::language_v2::{CohfieldLanguageModelV2, InternalEquivalenceProfile};
+use super::language_v2::InternalEquivalenceProfile;
 use super::language_v3::{
     CohfieldLanguageModelV3, ConsequenceEquivalenceAssessment, LanguageStateV3,
 };
