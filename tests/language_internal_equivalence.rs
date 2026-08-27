@@ -153,10 +153,14 @@ fn cf_lm_009_acquisition_discovers_only_the_cd_consequence_pair() {
         nontrivial_equivalence_pairs(&acquired),
         vec![(SurfaceSymbol::C.index(), SurfaceSymbol::D.index())]
     );
-    assert!(acquired.relational.consequence_equivalence[SurfaceSymbol::C.index()]
-        [SurfaceSymbol::D.index()]);
-    assert!(acquired.relational.consequence_equivalence[SurfaceSymbol::D.index()]
-        [SurfaceSymbol::C.index()]);
+    assert!(
+        acquired.relational.consequence_equivalence[SurfaceSymbol::C.index()]
+            [SurfaceSymbol::D.index()]
+    );
+    assert!(
+        acquired.relational.consequence_equivalence[SurfaceSymbol::D.index()]
+            [SurfaceSymbol::C.index()]
+    );
 }
 
 #[test]
@@ -179,7 +183,10 @@ fn cf_lm_009_no_internalization_control_does_not_transfer_new_relation() {
     let response = probe(&model, &trained, SurfaceSymbol::D, 4);
 
     assert!(response[2][SurfaceSymbol::A.index()].abs() <= EPS_FLOOR);
-    assert!(trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs() <= EPS_FLOOR);
+    assert!(
+        trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
+            <= EPS_FLOOR
+    );
 }
 
 #[test]
@@ -205,14 +212,19 @@ fn cf_lm_009_internalized_equivalence_transfers_later_c_to_a_learning_to_d_probe
         "A step-2 transfer was {}",
         response[2][SurfaceSymbol::A.index()]
     );
-    assert!((trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
-        - 0.557_984_402_843_442_6)
-        .abs()
-        < REGRESSION_TOL);
-    assert!((response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-        < REGRESSION_TOL);
-    assert!(trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
-        <= EPS_FLOOR);
+    assert!(
+        (trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
+            - 0.557_984_402_843_442_6)
+            .abs()
+            < REGRESSION_TOL
+    );
+    assert!(
+        (response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
+    );
+    assert!(
+        trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
+            <= EPS_FLOOR
+    );
 }
 
 #[test]
@@ -220,11 +232,14 @@ fn cf_lm_009_surgical_equivalence_ablation_collapses_transfer_without_erasing_le
     let model = CohfieldLanguageModelV2::default();
     let acquired = internalize(&model, &source_state());
     let trained = teach_isolated_pair(&model, &acquired, SurfaceSymbol::C, SurfaceSymbol::A);
-    let learned_c_to_a = trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()];
+    let learned_c_to_a =
+        trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()];
 
     let mut ablated = trained.clone();
-    ablated.relational.consequence_equivalence[SurfaceSymbol::C.index()][SurfaceSymbol::D.index()] = false;
-    ablated.relational.consequence_equivalence[SurfaceSymbol::D.index()][SurfaceSymbol::C.index()] = false;
+    ablated.relational.consequence_equivalence[SurfaceSymbol::C.index()]
+        [SurfaceSymbol::D.index()] = false;
+    ablated.relational.consequence_equivalence[SurfaceSymbol::D.index()]
+        [SurfaceSymbol::C.index()] = false;
 
     let response = probe(&model, &ablated, SurfaceSymbol::D, 4);
     assert!(response[2][SurfaceSymbol::A.index()].abs() <= EPS_FLOOR);
@@ -242,10 +257,13 @@ fn cf_lm_009_reverse_direction_internalization_transfers_d_to_a_learning_to_c_pr
     let response = probe(&model, &trained, SurfaceSymbol::C, 4);
 
     assert!(response[2][SurfaceSymbol::A.index()] > EPS_TRANSFER);
-    assert!((response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-        < REGRESSION_TOL);
-    assert!(trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()].abs()
-        <= EPS_FLOOR);
+    assert!(
+        (response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
+    );
+    assert!(
+        trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()].abs()
+            <= EPS_FLOOR
+    );
 }
 
 #[test]
