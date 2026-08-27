@@ -112,10 +112,7 @@ fn assessed_both(model: &CohfieldLanguageModelV4) -> LanguageStateV4 {
     assess(model, &after_ab, p_bc())
 }
 
-fn teach_c_to_a(
-    model: &CohfieldLanguageModelV4,
-    state: &LanguageStateV4,
-) -> LanguageStateV4 {
+fn teach_c_to_a(model: &CohfieldLanguageModelV4, state: &LanguageStateV4) -> LanguageStateV4 {
     let mut next = state.clone();
     for _ in 0..EPISODES {
         next = model
@@ -147,9 +144,9 @@ fn probe(
 
 fn nontrivial_pairs(matrix: [[bool; 4]; 4]) -> Vec<(usize, usize)> {
     let mut pairs = Vec::new();
-    for left in 0..SurfaceSymbol::ALL.len() {
-        for right in (left + 1)..SurfaceSymbol::ALL.len() {
-            if matrix[left][right] {
+    for (left, row) in matrix.iter().enumerate() {
+        for (right, &active) in row.iter().enumerate().skip(left + 1) {
+            if active {
                 pairs.push((left, right));
             }
         }
@@ -253,8 +250,7 @@ fn cf_lm_011_stored_profile_views_match_frozen_incompatible_dispositions() {
     assert!(nontrivial_pairs(bc).is_empty());
     assert!(c_d_distance_for_epoch(&assessed, 1).abs() <= EPS_FLOOR);
     assert!(
-        (c_d_distance_for_epoch(&assessed, 2) - 0.577_068_291_019_355_9).abs()
-            < REGRESSION_TOL
+        (c_d_distance_for_epoch(&assessed, 2) - 0.577_068_291_019_355_9).abs() < REGRESSION_TOL
     );
 }
 
@@ -267,8 +263,7 @@ fn cf_lm_011_selecting_p_ab_enables_frozen_internal_transfer() {
 
     assert!(response[2][SurfaceSymbol::A.index()] > EPS_TRANSFER);
     assert!(
-        (response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-            < REGRESSION_TOL
+        (response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
     );
     assert!(
         (trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
@@ -276,8 +271,10 @@ fn cf_lm_011_selecting_p_ab_enables_frozen_internal_transfer() {
             .abs()
             < REGRESSION_TOL
     );
-    assert!(trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
-        <= EPS_FLOOR);
+    assert!(
+        trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
+            <= EPS_FLOOR
+    );
 }
 
 #[test]
@@ -311,8 +308,7 @@ fn cf_lm_011_switching_back_to_p_ab_restores_identical_transfer_without_reassess
     assert_eq!(selected_ab_again.relational.assessment_history.len(), 12);
     assert_eq!(selected_ab_again.relational.selected_profile, Some(p_ab()));
     assert!(
-        (restored[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-            < REGRESSION_TOL
+        (restored[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
     );
 }
 
@@ -325,7 +321,10 @@ fn cf_lm_011_profile_selection_changes_only_selected_profile() {
 
     assert_eq!(selected_bc.x, selected_ab.x);
     assert_eq!(selected_bc.theta, selected_ab.theta);
-    assert_eq!(selected_bc.relational.sequential, selected_ab.relational.sequential);
+    assert_eq!(
+        selected_bc.relational.sequential,
+        selected_ab.relational.sequential
+    );
     assert_eq!(
         selected_bc.relational.assessment_history,
         selected_ab.relational.assessment_history
@@ -361,8 +360,7 @@ fn cf_lm_011_assessment_witness_ignores_current_selection_and_preserves_it() {
     assert_eq!(after_bc.relational.selected_profile, Some(p_ab()));
     assert_eq!(after_bc.relational.assessment_history.len(), 12);
     assert!(
-        (c_d_distance_for_epoch(&after_bc, 2) - 0.577_068_291_019_355_9).abs()
-            < REGRESSION_TOL
+        (c_d_distance_for_epoch(&after_bc, 2) - 0.577_068_291_019_355_9).abs() < REGRESSION_TOL
     );
     assert_eq!(
         nontrivial_pairs(model.selected_equivalence(&after_bc).unwrap()),
@@ -372,7 +370,9 @@ fn cf_lm_011_assessment_witness_ignores_current_selection_and_preserves_it() {
 
 #[test]
 fn cf_lm_011_full_assess_select_train_switch_cycle_is_deterministic() {
-    fn run() -> (LanguageStateV4, Vec<[f64; 4]>, Vec<[f64; 4]>, Vec<[f64; 4]>) {
+    type DeterminismRun = (LanguageStateV4, Vec<[f64; 4]>, Vec<[f64; 4]>, Vec<[f64; 4]>);
+
+    fn run() -> DeterminismRun {
         let model = CohfieldLanguageModelV4::default();
         let selected_ab = select(&model, &assessed_both(&model), p_ab());
         let trained = teach_c_to_a(&model, &selected_ab);
