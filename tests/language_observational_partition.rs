@@ -35,22 +35,61 @@ struct Profile {
 }
 
 const SHORT_PROFILES: [Profile; 5] = [
-    Profile { host: HostProfile::Baseline, horizon: 4 },
-    Profile { host: HostProfile::BackToA(1.0), horizon: 4 },
-    Profile { host: HostProfile::CrossRelay(0.5), horizon: 4 },
-    Profile { host: HostProfile::CrossRelay(1.0), horizon: 4 },
-    Profile { host: HostProfile::CrossRelay(2.0), horizon: 4 },
+    Profile {
+        host: HostProfile::Baseline,
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::BackToA(1.0),
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(0.5),
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(1.0),
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(2.0),
+        horizon: 4,
+    },
 ];
 
 const FULL_PROFILES: [Profile; 8] = [
-    Profile { host: HostProfile::Baseline, horizon: 4 },
-    Profile { host: HostProfile::BackToA(1.0), horizon: 4 },
-    Profile { host: HostProfile::CrossRelay(0.5), horizon: 4 },
-    Profile { host: HostProfile::CrossRelay(1.0), horizon: 4 },
-    Profile { host: HostProfile::CrossRelay(2.0), horizon: 4 },
-    Profile { host: HostProfile::CrossRelay(0.5), horizon: 10 },
-    Profile { host: HostProfile::CrossRelay(1.0), horizon: 10 },
-    Profile { host: HostProfile::CrossRelay(2.0), horizon: 10 },
+    Profile {
+        host: HostProfile::Baseline,
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::BackToA(1.0),
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(0.5),
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(1.0),
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(2.0),
+        horizon: 4,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(0.5),
+        horizon: 10,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(1.0),
+        horizon: 10,
+    },
+    Profile {
+        host: HostProfile::CrossRelay(2.0),
+        horizon: 10,
+    },
 ];
 
 fn exposed(model: &CohfieldLanguageModelV1, pattern: &[SurfaceSymbol]) -> LanguageState {
@@ -165,9 +204,10 @@ fn signatures(
 fn partition_by_exact_response(signatures: &[Vec<f64>]) -> Vec<Vec<usize>> {
     let mut classes: Vec<Vec<usize>> = Vec::new();
     for (index, signature) in signatures.iter().enumerate() {
-        if let Some(class) = classes.iter_mut().find(|class| {
-            signatures[class[0]].as_slice() == signature.as_slice()
-        }) {
+        if let Some(class) = classes
+            .iter_mut()
+            .find(|class| signatures[class[0]].as_slice() == signature.as_slice())
+        {
             class.push(index);
         } else {
             classes.push(vec![index]);
@@ -218,7 +258,10 @@ fn cf_lm_008_carrier_is_six_exact_different_states() {
     for (left_index, left) in states.iter().enumerate() {
         for (right_index, right) in states.iter().enumerate().skip(left_index + 1) {
             let distance = CohfieldLanguageModelV1::psi_frobenius_distance(left, right);
-            assert!(distance > EPS_STATE, "pair ({left_index},{right_index}) state distance {distance}");
+            assert!(
+                distance > EPS_STATE,
+                "pair ({left_index},{right_index}) state distance {distance}"
+            );
             assert_ne!(left.psi, right.psi);
         }
     }
@@ -262,9 +305,9 @@ fn cf_lm_008_full_partition_strictly_refines_short_without_merges() {
     let full = partition_by_exact_response(&signatures(&model, &states, &FULL_PROFILES));
 
     for full_class in &full {
-        assert!(short.iter().any(|short_class| {
-            full_class.iter().all(|member| short_class.contains(member))
-        }));
+        assert!(short
+            .iter()
+            .any(|short_class| { full_class.iter().all(|member| short_class.contains(member)) }));
     }
     assert!(full.len() > short.len());
 
@@ -313,7 +356,10 @@ fn cf_lm_008_rich_observer_distinguishes_every_short_class_pair() {
             &rich_response(&model, &states[left]),
             &rich_response(&model, &states[right]),
         );
-        assert!(distance > EPS_RICH, "pair ({left},{right}) rich distance {distance}");
+        assert!(
+            distance > EPS_RICH,
+            "pair ({left},{right}) rich distance {distance}"
+        );
     }
 }
 
