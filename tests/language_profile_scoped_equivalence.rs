@@ -1,9 +1,7 @@
 use cohfield_lm::profiles::language::{
     CohfieldLanguageModelV1, LanguageInput, LanguageState, SurfaceSymbol,
 };
-use cohfield_lm::profiles::language_v2::{
-    InternalEquivalenceProfile, LanguageStateV2,
-};
+use cohfield_lm::profiles::language_v2::{InternalEquivalenceProfile, LanguageStateV2};
 use cohfield_lm::profiles::language_v3::{
     CohfieldLanguageModelV3, ConsequenceEquivalenceAssessment, LanguageExperienceV3,
     LanguageStateV3,
@@ -83,10 +81,7 @@ fn assess(
         .expect("frozen assessment must be valid")
 }
 
-fn teach_c_to_a(
-    model: &CohfieldLanguageModelV3,
-    state: &LanguageStateV3,
-) -> LanguageStateV3 {
+fn teach_c_to_a(model: &CohfieldLanguageModelV3, state: &LanguageStateV3) -> LanguageStateV3 {
     let mut next = state.clone();
     for _ in 0..EPISODES {
         next = model
@@ -123,10 +118,7 @@ fn active_pairs(state: &LanguageStateV3) -> Vec<(usize, usize)> {
     pairs
 }
 
-fn epoch_records(
-    state: &LanguageStateV3,
-    epoch: u64,
-) -> Vec<ConsequenceEquivalenceAssessment> {
+fn epoch_records(state: &LanguageStateV3, epoch: u64) -> Vec<ConsequenceEquivalenceAssessment> {
     state
         .relational
         .assessment_history
@@ -160,7 +152,9 @@ fn cf_lm_010_p_ab_assessment_activates_only_cd_and_appends_six_records() {
         vec![(SurfaceSymbol::C.index(), SurfaceSymbol::D.index())]
     );
     assert_eq!(assessed.relational.assessment_history.len(), 6);
-    assert!(epoch_records(&assessed, 1).iter().all(|record| record.profile == profile_ab()));
+    assert!(epoch_records(&assessed, 1)
+        .iter()
+        .all(|record| record.profile == profile_ab()));
 }
 
 #[test]
@@ -232,14 +226,19 @@ fn cf_lm_010_p_ab_active_relation_preserves_verified_transfer() {
     let response = probe_d(&model, &trained);
 
     assert!(response[2][SurfaceSymbol::A.index()] > EPS_TRANSFER);
-    assert!((response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-        < REGRESSION_TOL);
-    assert!((trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
-        - 0.557_984_402_843_442_6)
-        .abs()
-        < REGRESSION_TOL);
-    assert!(trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
-        <= EPS_FLOOR);
+    assert!(
+        (response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
+    );
+    assert!(
+        (trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
+            - 0.557_984_402_843_442_6)
+            .abs()
+            < REGRESSION_TOL
+    );
+    assert!(
+        trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
+            <= EPS_FLOOR
+    );
 }
 
 #[test]
@@ -251,12 +250,16 @@ fn cf_lm_010_p_bc_revision_collapses_transfer_without_erasing_c_to_a_learning() 
     let response = probe_d(&model, &trained);
 
     assert!(response[2][SurfaceSymbol::A.index()].abs() <= EPS_FLOOR);
-    assert!((trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
-        - 0.557_984_402_843_442_6)
-        .abs()
-        < REGRESSION_TOL);
-    assert!(trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
-        <= EPS_FLOOR);
+    assert!(
+        (trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
+            - 0.557_984_402_843_442_6)
+            .abs()
+            < REGRESSION_TOL
+    );
+    assert!(
+        trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
+            <= EPS_FLOOR
+    );
     assert_eq!(trained.relational.assessment_history.len(), 12);
 }
 
@@ -279,8 +282,9 @@ fn cf_lm_010_reacquiring_p_ab_restores_transfer_and_preserves_all_assessment_epo
 
     let trained = teach_c_to_a(&model, &third);
     let response = probe_d(&model, &trained);
-    assert!((response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-        < REGRESSION_TOL);
+    assert!(
+        (response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
+    );
 }
 
 #[test]

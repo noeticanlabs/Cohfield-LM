@@ -3,9 +3,7 @@ use crate::{AdaptiveContinuationModel, StateRoles};
 use super::language::{
     LanguageError, LanguageInput, LanguageObservationProfile, LanguageResponse, SurfaceSymbol,
 };
-use super::language_v2::{
-    CohfieldLanguageModelV2, InternalEquivalenceProfile, LanguageStateV2,
-};
+use super::language_v2::{CohfieldLanguageModelV2, InternalEquivalenceProfile, LanguageStateV2};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConsequenceEquivalenceAssessment {
