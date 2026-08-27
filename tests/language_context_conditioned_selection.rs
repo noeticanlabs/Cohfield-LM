@@ -115,10 +115,7 @@ fn recognize(
     cue: &[SurfaceSymbol],
 ) -> LanguageStateV5 {
     model
-        .adapt(
-            state,
-            &LanguageExperienceV5::RecognizeContext(cue.to_vec()),
-        )
+        .adapt(state, &LanguageExperienceV5::RecognizeContext(cue.to_vec()))
         .expect("frozen context recognition must be valid")
 }
 
@@ -204,7 +201,10 @@ fn cf_lm_012_v4_to_v5_migration_preserves_parent_state_and_starts_empty_context_
         v5.relational.assessment_history,
         selected.relational.assessment_history
     );
-    assert_eq!(v5.relational.selected_profile, selected.relational.selected_profile);
+    assert_eq!(
+        v5.relational.selected_profile,
+        selected.relational.selected_profile
+    );
     assert_eq!(v5.relational.current_context_epoch, None);
     assert!(v5.relational.context_history.is_empty());
     assert!(v5.relational.selection_history.is_empty());
@@ -224,8 +224,14 @@ fn cf_lm_012_k_ab_recognition_produces_exact_signature_without_selecting_profile
         recognized.relational.context_history[0].activity,
         [0.50, 0.25, 0.00, 0.25]
     );
-    assert_eq!(recognized.relational.assessment_history, assessed.relational.assessment_history);
-    assert_eq!(recognized.relational.sequential, assessed.relational.sequential);
+    assert_eq!(
+        recognized.relational.assessment_history,
+        assessed.relational.assessment_history
+    );
+    assert_eq!(
+        recognized.relational.sequential,
+        assessed.relational.sequential
+    );
 }
 
 #[test]
@@ -252,7 +258,10 @@ fn cf_lm_012_k_bc_inference_selects_p_bc_from_the_same_generic_rule() {
     let recognized = recognize(&model, &assessed_both(&model), &K_BC);
     let inferred = infer(&model, &recognized);
 
-    assert_eq!(recognized.relational.context_history[0].activity, [0.00, 0.25, 0.50, 0.25]);
+    assert_eq!(
+        recognized.relational.context_history[0].activity,
+        [0.00, 0.25, 0.50, 0.25]
+    );
     assert_eq!(inferred.relational.selected_profile, Some(p_bc()));
     let scores = &inferred.relational.selection_history[0].candidate_scores;
     assert_eq!(scores[0].profile, p_ab());
@@ -300,8 +309,7 @@ fn cf_lm_012_inferred_p_ab_enables_frozen_transfer_after_unselected_teaching() {
     assert_eq!(contextualized.relational.selected_profile, Some(p_ab()));
     assert!(response[2][SurfaceSymbol::A.index()] > EPS_TRANSFER);
     assert!(
-        (response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-            < REGRESSION_TOL
+        (response[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
     );
     assert!(
         (trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
@@ -370,13 +378,30 @@ fn cf_lm_012_context_provenance_and_full_cycle_are_deterministic() {
     }
 
     let (state, first, middle, restored) = run();
-    assert_eq!((state.clone(), first.clone(), middle.clone(), restored.clone()), run());
+    assert_eq!(
+        (
+            state.clone(),
+            first.clone(),
+            middle.clone(),
+            restored.clone()
+        ),
+        run()
+    );
     assert_eq!(first, restored);
     assert!(middle[2][SurfaceSymbol::A.index()].abs() <= EPS_FLOOR);
     assert_eq!(state.relational.context_history[0].cue, K_AB);
     assert_eq!(state.relational.context_history[1].cue, K_BC);
     assert_eq!(state.relational.context_history[2].cue, K_AB);
-    assert_eq!(state.relational.selection_history[0].selected_profile, p_ab());
-    assert_eq!(state.relational.selection_history[1].selected_profile, p_bc());
-    assert_eq!(state.relational.selection_history[2].selected_profile, p_ab());
+    assert_eq!(
+        state.relational.selection_history[0].selected_profile,
+        p_ab()
+    );
+    assert_eq!(
+        state.relational.selection_history[1].selected_profile,
+        p_bc()
+    );
+    assert_eq!(
+        state.relational.selection_history[2].selected_profile,
+        p_ab()
+    );
 }

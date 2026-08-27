@@ -287,11 +287,13 @@ impl CohfieldLanguageModelV5 {
             .unwrap_or(1);
 
         let mut next = state.clone();
-        next.relational.context_history.push(ContextRecognitionRecordV5 {
-            epoch: next_epoch,
-            cue: cue.to_vec(),
-            activity,
-        });
+        next.relational
+            .context_history
+            .push(ContextRecognitionRecordV5 {
+                epoch: next_epoch,
+                cue: cue.to_vec(),
+                activity,
+            });
         next.relational.current_context_epoch = Some(next_epoch);
         Ok(next)
     }
@@ -314,10 +316,10 @@ impl CohfieldLanguageModelV5 {
         Ok(profiles)
     }
 
-    fn current_context(
+    fn current_context<'a>(
         &self,
-        state: &LanguageStateV5,
-    ) -> Result<&ContextRecognitionRecordV5, LanguageErrorV5> {
+        state: &'a LanguageStateV5,
+    ) -> Result<&'a ContextRecognitionRecordV5, LanguageErrorV5> {
         let epoch = state
             .relational
             .current_context_epoch
@@ -399,12 +401,14 @@ impl CohfieldLanguageModelV5 {
 
         let mut next = state.clone();
         next.relational.selected_profile = Some(selected_profile);
-        next.relational.selection_history.push(ContextSelectionRecordV5 {
-            epoch: next_epoch,
-            context_epoch: context.epoch,
-            candidate_scores,
-            selected_profile,
-        });
+        next.relational
+            .selection_history
+            .push(ContextSelectionRecordV5 {
+                epoch: next_epoch,
+                context_epoch: context.epoch,
+                candidate_scores,
+                selected_profile,
+            });
         Ok(next)
     }
 
