@@ -156,6 +156,15 @@ impl CohfieldLanguageModelV5 {
     }
 
     fn valid_state(&self, state: &LanguageStateV5) -> bool {
+        let context_reference_valid = match state.relational.current_context_epoch {
+            Some(epoch) => state
+                .relational
+                .context_history
+                .iter()
+                .any(|record| record.epoch == epoch),
+            None => true,
+        };
+
         state.x.iter().all(|value| value.is_finite())
             && state.theta.iter().all(|value| value.is_finite())
             && state
@@ -182,13 +191,7 @@ impl CohfieldLanguageModelV5 {
                 .flat_map(|record| record.candidate_scores.iter())
                 .all(|entry| entry.score.is_finite())
             && state.theta == [1.0; 4]
-            && state.relational.current_context_epoch.is_none_or(|epoch| {
-                state
-                    .relational
-                    .context_history
-                    .iter()
-                    .any(|record| record.epoch == epoch)
-            })
+            && context_reference_valid
     }
 
     fn to_v4_state(&self, state: &LanguageStateV5) -> LanguageStateV4 {
@@ -213,7 +216,10 @@ impl CohfieldLanguageModelV5 {
         next
     }
 
-    pub fn migrate_from_v4(&self, state: &LanguageStateV4) -> Result<LanguageStateV5, LanguageErrorV5> {
+    pub fn migrate_from_v4(
+        &self,
+        state: &LanguageStateV4,
+    ) -> Result<LanguageStateV5, LanguageErrorV5> {
         let next = LanguageStateV5 {
             x: state.x,
             theta: state.theta,
@@ -251,27 +257,6 @@ impl CohfieldLanguageModelV5 {
         self.v4_model()
             .selected_equivalence(&self.to_v4_state(state))
             .map_err(Into::into)
-    }
-
-    fn step(
-        &self,
-        state: &LanguageStateV5,
-        input: &LanguageInput,
-    ) -> Result<LanguageStateV5, LanguageErrorV5> {
-        if !self.valid_parameters() {
-            return Err(LanguageErrorV5::BaseV4(LanguageErrorV4::Base(
-                LanguageError::InvalidParameter,
-            )));
-        }
-        if !self.valid_state(state) {
-            return Err(LanguageErrorV5::BaseV4(LanguageErrorV4::Base(
-                LanguageError::InvalidState,
-            )));
-        }
-        let v4 = self
-            .v4_model()
-            .evolve(&self.to_v4_state(state), input, 1.0)?;
-        Ok(self.apply_v4_state(state, v4))
     }
 
     fn recognize_context(
@@ -365,6 +350,7 @@ impl CohfieldLanguageModelV5 {
                 LanguageError::InvalidState,
             )));
         }
+
         let context = self.current_context(state)?;
         let profiles = self.assessed_profiles(state)?;
         let candidate_scores: Vec<ProfileContextScoreV5> = profiles
@@ -428,9 +414,9 @@ impl CohfieldLanguageModelV5 {
         pattern: &[SurfaceSymbol],
         repeats: usize,
     ) -> Result<LanguageStateV5, LanguageErrorV5> {
-        if pattern.is_empty() || repeats == 0 {
+        if !self.valid_parameters() {
             return Err(LanguageErrorV5::BaseV4(LanguageErrorV4::Base(
-                LanguageError::EmptyExposure,
+                LanguageError::InvalidParameter,
             )));
         }
         if !self.valid_state(initial) {
@@ -438,23 +424,10 @@ impl CohfieldLanguageModelV5 {
                 LanguageError::InvalidState,
             )));
         }
-
-        let mut state = initial.clone();
-        let mut predecessor = None;
-        for _ in 0..repeats {
-            for &symbol in pattern {
-                state = self.step(&state, &LanguageInput::symbol(symbol))?;
-                state = self.adapt(
-                    &state,
-                    &LanguageExperienceV5::Sequential {
-                        predecessor,
-                        current: symbol,
-                    },
-                )?;
-                predecessor = Some(symbol);
-            }
-        }
-        Ok(state)
+        let v4 = self
+            .v4_model()
+            .expose(&self.to_v4_state(initial), pattern, repeats)?;
+        Ok(self.apply_v4_state(initial, v4))
     }
 }
 
@@ -486,21 +459,20 @@ impl AdaptiveContinuationModel for CohfieldLanguageModelV5 {
         input: &Self::Input,
         horizon: f64,
     ) -> Result<Self::State, Self::Error> {
-        if !horizon.is_finite() || horizon < 0.0 || horizon.fract() != 0.0 {
+        if !self.valid_parameters() {
             return Err(LanguageErrorV5::BaseV4(LanguageErrorV4::Base(
-                LanguageError::InvalidHorizon,
+                LanguageError::InvalidParameter,
             )));
         }
-        if horizon == 0.0 {
-            return Ok(state.clone());
+        if !self.valid_state(state) {
+            return Err(LanguageErrorV5::BaseV4(LanguageErrorV4::Base(
+                LanguageError::InvalidState,
+            )));
         }
-
-        let steps = horizon as usize;
-        let mut next = self.step(state, input)?;
-        for _ in 1..steps {
-            next = self.step(&next, &LanguageInput::zero())?;
-        }
-        Ok(next)
+        let v4 = self
+            .v4_model()
+            .evolve(&self.to_v4_state(state), input, horizon)?;
+        Ok(self.apply_v4_state(state, v4))
     }
 
     fn adapt(
@@ -562,26 +534,8 @@ impl AdaptiveContinuationModel for CohfieldLanguageModelV5 {
                 LanguageError::InvalidState,
             )));
         }
-        if profile.probes.is_empty() {
-            return Err(LanguageErrorV5::BaseV4(LanguageErrorV4::Base(
-                LanguageError::Base(LanguageError::EmptyProbeFamily),
-            )));
-        }
-
-        let mut vectors =
-            Vec::with_capacity(profile.probes.len() * (2 + profile.continuation_steps));
-        for probe in &profile.probes {
-            let mut local = LanguageStateV5::equalized_from(state);
-            for &symbol in probe {
-                local = self.step(&local, &LanguageInput::symbol(symbol))?;
-                vectors.push(local.x);
-            }
-            for _ in 0..profile.continuation_steps {
-                local = self.step(&local, &LanguageInput::zero())?;
-                vectors.push(local.x);
-            }
-        }
-
-        Ok(LanguageResponse { vectors })
+        self.v4_model()
+            .observe(&self.to_v4_state(state), profile)
+            .map_err(Into::into)
     }
 }
