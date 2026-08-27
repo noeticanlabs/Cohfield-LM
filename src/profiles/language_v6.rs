@@ -7,8 +7,8 @@ use super::language_v2::InternalEquivalenceProfile;
 use super::language_v3::ConsequenceEquivalenceAssessment;
 use super::language_v4::LanguageErrorV4;
 use super::language_v5::{
-    CohfieldLanguageModelV5, ContextRecognitionRecordV5, ContextSelectionRecordV5,
-    LanguageErrorV5, LanguageExperienceV5, LanguageRelationalConfigurationV5, LanguageStateV5,
+    CohfieldLanguageModelV5, ContextRecognitionRecordV5, ContextSelectionRecordV5, LanguageErrorV5,
+    LanguageExperienceV5, LanguageRelationalConfigurationV5, LanguageStateV5,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -207,13 +207,17 @@ impl CohfieldLanguageModelV6 {
     }
 
     fn learned_selection_references_valid(state: &LanguageStateV6) -> bool {
-        state.relational.learned_selection_history.iter().all(|record| {
-            Self::context_for_epoch(state, record.context_epoch).is_some()
-                && record
-                    .candidate_distances
-                    .iter()
-                    .any(|candidate| candidate.profile == record.selected_profile)
-        })
+        state
+            .relational
+            .learned_selection_history
+            .iter()
+            .all(|record| {
+                Self::context_for_epoch(state, record.context_epoch).is_some()
+                    && record
+                        .candidate_distances
+                        .iter()
+                        .any(|candidate| candidate.profile == record.selected_profile)
+            })
     }
 
     fn valid_state(&self, state: &LanguageStateV6) -> bool {
@@ -341,9 +345,12 @@ impl CohfieldLanguageModelV6 {
         let epoch = state
             .relational
             .current_context_epoch
-            .ok_or(LanguageErrorV6::BaseV5(LanguageErrorV5::NoRecognizedContext))?;
-        Self::context_for_epoch(state, epoch)
-            .ok_or(LanguageErrorV6::BaseV5(LanguageErrorV5::NoRecognizedContext))
+            .ok_or(LanguageErrorV6::BaseV5(
+                LanguageErrorV5::NoRecognizedContext,
+            ))?;
+        Self::context_for_epoch(state, epoch).ok_or(LanguageErrorV6::BaseV5(
+            LanguageErrorV5::NoRecognizedContext,
+        ))
     }
 
     fn ensure_profile_assessed(

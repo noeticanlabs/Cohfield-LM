@@ -166,10 +166,7 @@ fn recognize(
     cue: &[SurfaceSymbol],
 ) -> LanguageStateV6 {
     model
-        .adapt(
-            state,
-            &LanguageExperienceV6::RecognizeContext(cue.to_vec()),
-        )
+        .adapt(state, &LanguageExperienceV6::RecognizeContext(cue.to_vec()))
         .expect("frozen context recognition must be valid")
 }
 
@@ -301,9 +298,18 @@ fn cf_lm_013_v5_to_v6_migration_preserves_parent_state_and_starts_empty_applicab
     assert_eq!(v6.x, v5.x);
     assert_eq!(v6.theta, v5.theta);
     assert_eq!(v6.relational.sequential, v5.relational.sequential);
-    assert_eq!(v6.relational.selected_profile, v5.relational.selected_profile);
-    assert_eq!(v6.relational.assessment_history, v5.relational.assessment_history);
-    assert_eq!(v6.relational.current_context_epoch, v5.relational.current_context_epoch);
+    assert_eq!(
+        v6.relational.selected_profile,
+        v5.relational.selected_profile
+    );
+    assert_eq!(
+        v6.relational.assessment_history,
+        v5.relational.assessment_history
+    );
+    assert_eq!(
+        v6.relational.current_context_epoch,
+        v5.relational.current_context_epoch
+    );
     assert_eq!(v6.relational.context_history, v5.relational.context_history);
     assert_eq!(
         v6.relational.projection_selection_history,
@@ -314,7 +320,8 @@ fn cf_lm_013_v5_to_v6_migration_preserves_parent_state_and_starts_empty_applicab
 }
 
 #[test]
-fn cf_lm_013_applicability_acquisition_appends_four_records_without_selecting_or_mutating_substrate() {
+fn cf_lm_013_applicability_acquisition_appends_four_records_without_selecting_or_mutating_substrate(
+) {
     let model = CohfieldLanguageModelV6::default();
     let assessed = assessed_both(&model);
     let learned = train_applicability(&model);
@@ -323,7 +330,10 @@ fn cf_lm_013_applicability_acquisition_appends_four_records_without_selecting_or
     assert_eq!(learned.relational.selected_profile, None);
     assert_eq!(learned.x, assessed.x);
     assert_eq!(learned.theta, assessed.theta);
-    assert_eq!(learned.relational.sequential, assessed.relational.sequential);
+    assert_eq!(
+        learned.relational.sequential,
+        assessed.relational.sequential
+    );
     assert_eq!(
         learned.relational.assessment_history,
         assessed.relational.assessment_history
@@ -383,8 +393,14 @@ fn cf_lm_013_heldout_k_c_selects_p_ab_and_inverts_old_projection_heuristic() {
     let inferred = infer(&model, &recognized);
 
     assert_eq!(inferred.relational.selected_profile, Some(p_ab()));
-    assert!((distance_for(last_distances(&inferred), p_ab()) - 0.306_186_217_847_897_24).abs() < REGRESSION_TOL);
-    assert!((distance_for(last_distances(&inferred), p_bc()) - 0.847_791_247_890_658_5).abs() < REGRESSION_TOL);
+    assert!(
+        (distance_for(last_distances(&inferred), p_ab()) - 0.306_186_217_847_897_24).abs()
+            < REGRESSION_TOL
+    );
+    assert!(
+        (distance_for(last_distances(&inferred), p_bc()) - 0.847_791_247_890_658_5).abs()
+            < REGRESSION_TOL
+    );
     assert!(old_projection_score(p_ab(), activity) < old_projection_score(p_bc(), activity));
     assert_eq!(old_projection_score(p_ab(), activity), 0.25);
     assert_eq!(old_projection_score(p_bc(), activity), 0.75);
@@ -404,8 +420,14 @@ fn cf_lm_013_heldout_k_a_selects_p_bc_and_inverts_old_projection_heuristic() {
     let inferred = infer(&model, &recognized);
 
     assert_eq!(inferred.relational.selected_profile, Some(p_bc()));
-    assert!((distance_for(last_distances(&inferred), p_ab()) - 0.847_791_247_890_658_5).abs() < REGRESSION_TOL);
-    assert!((distance_for(last_distances(&inferred), p_bc()) - 0.306_186_217_847_897_24).abs() < REGRESSION_TOL);
+    assert!(
+        (distance_for(last_distances(&inferred), p_ab()) - 0.847_791_247_890_658_5).abs()
+            < REGRESSION_TOL
+    );
+    assert!(
+        (distance_for(last_distances(&inferred), p_bc()) - 0.306_186_217_847_897_24).abs()
+            < REGRESSION_TOL
+    );
     assert!(old_projection_score(p_bc(), activity) < old_projection_score(p_ab(), activity));
     assert_eq!(old_projection_score(p_ab(), activity), 0.75);
     assert_eq!(old_projection_score(p_bc(), activity), 0.25);
@@ -462,17 +484,22 @@ fn cf_lm_013_learned_applicability_controls_transfer_and_restores_it_without_rel
     let trained = teach_c_to_a(&model, &learned);
 
     assert_eq!(trained.relational.selected_profile, None);
-    assert!((trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
-        - 0.557_984_402_843_442_6)
-        .abs()
-        < REGRESSION_TOL);
-    assert!(trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
-        <= EPS_FLOOR);
+    assert!(
+        (trained.relational.sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
+            - 0.557_984_402_843_442_6)
+            .abs()
+            < REGRESSION_TOL
+    );
+    assert!(
+        trained.relational.sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs()
+            <= EPS_FLOOR
+    );
 
     let k_c = infer(&model, &recognize(&model, &trained, &K_C));
     let first = probe(&model, &k_c, SurfaceSymbol::D, 4);
-    assert!((first[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-        < REGRESSION_TOL);
+    assert!(
+        (first[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
+    );
 
     let k_a = infer(&model, &recognize(&model, &k_c, &K_A));
     let middle = probe(&model, &k_a, SurfaceSymbol::D, 4);
