@@ -1,10 +1,11 @@
 use crate::{AdaptiveContinuationModel, StateRoles};
 
 use super::language::{
-    LanguageInput, LanguageObservationProfile, LanguageResponse, SurfaceSymbol,
+    LanguageError, LanguageInput, LanguageObservationProfile, LanguageResponse, SurfaceSymbol,
 };
 use super::language_v2::InternalEquivalenceProfile;
 use super::language_v3::ConsequenceEquivalenceAssessment;
+use super::language_v4::LanguageErrorV4;
 use super::language_v5::{
     CohfieldLanguageModelV5, ContextRecognitionRecordV5, ContextSelectionRecordV5,
     LanguageErrorV5, LanguageExperienceV5, LanguageRelationalConfigurationV5, LanguageStateV5,
@@ -139,15 +140,28 @@ impl Default for CohfieldLanguageModelV6 {
 }
 
 impl CohfieldLanguageModelV6 {
+    fn invalid_parameter() -> LanguageErrorV6 {
+        LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(LanguageErrorV4::Base(
+            LanguageError::InvalidParameter,
+        )))
+    }
+
+    fn invalid_state() -> LanguageErrorV6 {
+        LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(LanguageErrorV4::Base(
+            LanguageError::InvalidState,
+        )))
+    }
+
     fn v5_model(&self) -> CohfieldLanguageModelV5 {
-        let mut model = CohfieldLanguageModelV5::default();
-        model.beta = self.beta;
-        model.input_gain = self.input_gain;
-        model.relational_gain = self.relational_gain;
-        model.psi_decay = self.psi_decay;
-        model.psi_gain = self.psi_gain;
-        model.equivalence_coupling = self.equivalence_coupling;
-        model
+        CohfieldLanguageModelV5 {
+            beta: self.beta,
+            input_gain: self.input_gain,
+            relational_gain: self.relational_gain,
+            psi_decay: self.psi_decay,
+            psi_gain: self.psi_gain,
+            equivalence_coupling: self.equivalence_coupling,
+            ..CohfieldLanguageModelV5::default()
+        }
     }
 
     fn valid_parameters(&self) -> bool {
@@ -166,15 +180,40 @@ impl CohfieldLanguageModelV6 {
             && self.minimum_applicability_margin >= 0.0
     }
 
+    fn context_for_epoch(
+        state: &LanguageStateV6,
+        epoch: u64,
+    ) -> Option<&ContextRecognitionRecordV5> {
+        state
+            .relational
+            .context_history
+            .iter()
+            .find(|record| record.epoch == epoch)
+    }
+
     fn context_reference_valid(state: &LanguageStateV6) -> bool {
         match state.relational.current_context_epoch {
-            Some(epoch) => state
-                .relational
-                .context_history
-                .iter()
-                .any(|record| record.epoch == epoch),
+            Some(epoch) => Self::context_for_epoch(state, epoch).is_some(),
             None => true,
         }
+    }
+
+    fn applicability_references_valid(state: &LanguageStateV6) -> bool {
+        state.relational.applicability_history.iter().all(|record| {
+            Self::context_for_epoch(state, record.context_epoch)
+                .map(|context| context.activity == record.activity)
+                .unwrap_or(false)
+        })
+    }
+
+    fn learned_selection_references_valid(state: &LanguageStateV6) -> bool {
+        state.relational.learned_selection_history.iter().all(|record| {
+            Self::context_for_epoch(state, record.context_epoch).is_some()
+                && record
+                    .candidate_distances
+                    .iter()
+                    .any(|candidate| candidate.profile == record.selected_profile)
+        })
     }
 
     fn valid_state(&self, state: &LanguageStateV6) -> bool {
@@ -217,6 +256,8 @@ impl CohfieldLanguageModelV6 {
                 .all(|entry| entry.distance.is_finite())
             && state.theta == [1.0; 4]
             && Self::context_reference_valid(state)
+            && Self::applicability_references_valid(state)
+            && Self::learned_selection_references_valid(state)
     }
 
     fn to_v5_state(&self, state: &LanguageStateV6) -> LanguageStateV5 {
@@ -251,6 +292,9 @@ impl CohfieldLanguageModelV6 {
         &self,
         state: &LanguageStateV5,
     ) -> Result<LanguageStateV6, LanguageErrorV6> {
+        if !self.valid_parameters() {
+            return Err(Self::invalid_parameter());
+        }
         let next = LanguageStateV6 {
             x: state.x,
             theta: state.theta,
@@ -265,12 +309,8 @@ impl CohfieldLanguageModelV6 {
                 learned_selection_history: Vec::new(),
             },
         };
-        if !self.valid_parameters() || !self.valid_state(&next) {
-            return Err(LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(
-                super::language_v4::LanguageErrorV4::Base(
-                    super::language::LanguageError::InvalidState,
-                ),
-            )));
+        if !self.valid_state(&next) {
+            return Err(Self::invalid_state());
         }
         Ok(next)
     }
@@ -302,11 +342,7 @@ impl CohfieldLanguageModelV6 {
             .relational
             .current_context_epoch
             .ok_or(LanguageErrorV6::BaseV5(LanguageErrorV5::NoRecognizedContext))?;
-        state
-            .relational
-            .context_history
-            .iter()
-            .find(|record| record.epoch == epoch)
+        Self::context_for_epoch(state, epoch)
             .ok_or(LanguageErrorV6::BaseV5(LanguageErrorV5::NoRecognizedContext))
     }
 
@@ -327,11 +363,7 @@ impl CohfieldLanguageModelV6 {
         profile: InternalEquivalenceProfile,
     ) -> Result<LanguageStateV6, LanguageErrorV6> {
         if !self.valid_state(state) {
-            return Err(LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(
-                super::language_v4::LanguageErrorV4::Base(
-                    super::language::LanguageError::InvalidState,
-                ),
-            )));
+            return Err(Self::invalid_state());
         }
         self.ensure_profile_assessed(state, profile)?;
         let context = self.current_context(state)?.clone();
@@ -359,11 +391,7 @@ impl CohfieldLanguageModelV6 {
         state: &LanguageStateV6,
     ) -> Result<Vec<ProfileApplicabilityPrototypeV6>, LanguageErrorV6> {
         if !self.valid_state(state) {
-            return Err(LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(
-                super::language_v4::LanguageErrorV4::Base(
-                    super::language::LanguageError::InvalidState,
-                ),
-            )));
+            return Err(Self::invalid_state());
         }
         if state.relational.applicability_history.is_empty() {
             return Err(LanguageErrorV6::NoApplicabilityExperience);
@@ -418,12 +446,11 @@ impl CohfieldLanguageModelV6 {
         &self,
         state: &LanguageStateV6,
     ) -> Result<LanguageStateV6, LanguageErrorV6> {
-        if !self.valid_parameters() || !self.valid_state(state) {
-            return Err(LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(
-                super::language_v4::LanguageErrorV4::Base(
-                    super::language::LanguageError::InvalidState,
-                ),
-            )));
+        if !self.valid_parameters() {
+            return Err(Self::invalid_parameter());
+        }
+        if !self.valid_state(state) {
+            return Err(Self::invalid_state());
         }
         let context = self.current_context(state)?.clone();
         let prototypes = self.applicability_prototypes(state)?;
@@ -492,12 +519,11 @@ impl CohfieldLanguageModelV6 {
         pattern: &[SurfaceSymbol],
         repeats: usize,
     ) -> Result<LanguageStateV6, LanguageErrorV6> {
-        if !self.valid_parameters() || !self.valid_state(initial) {
-            return Err(LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(
-                super::language_v4::LanguageErrorV4::Base(
-                    super::language::LanguageError::InvalidState,
-                ),
-            )));
+        if !self.valid_parameters() {
+            return Err(Self::invalid_parameter());
+        }
+        if !self.valid_state(initial) {
+            return Err(Self::invalid_state());
         }
         let v5 = self
             .v5_model()
@@ -534,12 +560,11 @@ impl AdaptiveContinuationModel for CohfieldLanguageModelV6 {
         input: &Self::Input,
         horizon: f64,
     ) -> Result<Self::State, Self::Error> {
-        if !self.valid_parameters() || !self.valid_state(state) {
-            return Err(LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(
-                super::language_v4::LanguageErrorV4::Base(
-                    super::language::LanguageError::InvalidState,
-                ),
-            )));
+        if !self.valid_parameters() {
+            return Err(Self::invalid_parameter());
+        }
+        if !self.valid_state(state) {
+            return Err(Self::invalid_state());
         }
         let v5 = self
             .v5_model()
@@ -552,12 +577,11 @@ impl AdaptiveContinuationModel for CohfieldLanguageModelV6 {
         state: &Self::State,
         experience: &Self::Experience,
     ) -> Result<Self::State, Self::Error> {
-        if !self.valid_parameters() || !self.valid_state(state) {
-            return Err(LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(
-                super::language_v4::LanguageErrorV4::Base(
-                    super::language::LanguageError::InvalidState,
-                ),
-            )));
+        if !self.valid_parameters() {
+            return Err(Self::invalid_parameter());
+        }
+        if !self.valid_state(state) {
+            return Err(Self::invalid_state());
         }
 
         match experience {
@@ -602,12 +626,11 @@ impl AdaptiveContinuationModel for CohfieldLanguageModelV6 {
         state: &Self::State,
         profile: &Self::ObservationProfile,
     ) -> Result<Self::Response, Self::Error> {
-        if !self.valid_parameters() || !self.valid_state(state) {
-            return Err(LanguageErrorV6::BaseV5(LanguageErrorV5::BaseV4(
-                super::language_v4::LanguageErrorV4::Base(
-                    super::language::LanguageError::InvalidState,
-                ),
-            )));
+        if !self.valid_parameters() {
+            return Err(Self::invalid_parameter());
+        }
+        if !self.valid_state(state) {
+            return Err(Self::invalid_state());
         }
         self.v5_model()
             .observe(&self.to_v5_state(state), profile)
