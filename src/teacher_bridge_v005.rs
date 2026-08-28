@@ -172,9 +172,8 @@ impl V5Curriculum {
 
     pub fn without_role_anchors() -> Self {
         let mut base = Self::llm_authored();
-        base.episodes.retain(|episode| {
-            !matches!(episode.source, S5::R1 | S5::R2)
-        });
+        base.episodes
+            .retain(|episode| !matches!(episode.source, S5::R1 | S5::R2));
         base
     }
 
@@ -191,9 +190,8 @@ impl V5Curriculum {
 
     pub fn without_third_target_anchor() -> Self {
         let mut base = Self::llm_authored();
-        base.episodes.retain(|episode| {
-            (episode.source, episode.target) != (S5::A3, S5::C3)
-        });
+        base.episodes
+            .retain(|episode| (episode.source, episode.target) != (S5::A3, S5::C3));
         base
     }
 
@@ -257,9 +255,7 @@ impl V5Input {
     }
 
     pub fn zero() -> Self {
-        Self {
-            activity: [0.0; N],
-        }
+        Self { activity: [0.0; N] }
     }
 }
 
@@ -392,7 +388,8 @@ impl V5Model {
                         if !target_role.contains(target) {
                             continue;
                         }
-                        let affinity = state.structure.slot_affinity[source.index()][target.index()];
+                        let affinity =
+                            state.structure.slot_affinity[source.index()][target.index()];
                         next.x[target.index()] += self.relational_gain
                             * state.structure.binding_gain
                             * affinity
@@ -432,12 +429,7 @@ impl V5Model {
         roles
     }
 
-    fn incoming_signature_cosine(
-        &self,
-        psi: &[[f64; N]; N],
-        left: S5,
-        right: S5,
-    ) -> f64 {
+    fn incoming_signature_cosine(&self, psi: &[[f64; N]; N], left: S5, right: S5) -> f64 {
         let mut dot = 0.0;
         let mut left_norm = 0.0;
         let mut right_norm = 0.0;
