@@ -176,16 +176,7 @@ fn frozen_exact_v004_diagnostics_are_stable() {
     assert!((r.state.slot_affinity[S::B3.index()][S::C3.index()] - 1.0).abs() <= EPS);
 
     let probe = r.model.probe_teacher_off(&r.state, S::B3, 3);
-    assert!(
-        (probe.activation(1, S::C3).unwrap() - 0.028_390_786_667_998_782).abs()
-            <= REGRESSION_TOL
-    );
-    assert!(
-        (probe.activation(2, S::C3).unwrap() - 0.028_390_786_667_998_782).abs()
-            <= REGRESSION_TOL
-    );
-    assert!(
-        (probe.activation(3, S::C3).unwrap() - 0.021_293_090_000_999_087).abs()
-            <= REGRESSION_TOL
-    );
+    assert!((probe.activation(1, S::C3).unwrap() - 0.028_390_786_667_998_782).abs() <= REGRESSION_TOL);
+    assert!((probe.activation(2, S::C3).unwrap() - 0.028_390_786_667_998_782).abs() <= REGRESSION_TOL);
+    assert!((probe.activation(3, S::C3).unwrap() - 0.021_293_090_000_999_087).abs() <= REGRESSION_TOL);
 }
