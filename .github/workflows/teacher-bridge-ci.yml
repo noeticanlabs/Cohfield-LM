@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - agent/cf-lm-teacher-bridge-v001
+      - agent/cf-lm-teacher-bridge-v002
   workflow_dispatch:
 
 jobs:
@@ -15,6 +16,8 @@ jobs:
         with:
           components: rustfmt
       - name: Format check new surface
-        run: rustfmt --edition 2021 --check src/teacher_bridge.rs tests/teacher_bridge_v001.rs
+        run: rustfmt --edition 2021 --check src/teacher_bridge.rs src/teacher_bridge_v002.rs tests/teacher_bridge_v001.rs tests/teacher_bridge_v002.rs
       - name: Compile and run teacher bridge tests
-        run: cargo test --test teacher_bridge_v001
+        run: |
+          cargo test --test teacher_bridge_v001
+          cargo test --test teacher_bridge_v002

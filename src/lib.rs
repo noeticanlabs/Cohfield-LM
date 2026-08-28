@@ -9,6 +9,7 @@ pub mod geometry;
 pub mod model;
 pub mod profiles;
 pub mod teacher_bridge;
+pub mod teacher_bridge_v002;
 
 pub use counterfactual::{
     binary_survival, mean_recovery_margin, recovery_margin, CounterfactualProfile,
