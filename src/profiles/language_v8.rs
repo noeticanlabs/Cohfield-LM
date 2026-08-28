@@ -88,17 +88,9 @@ pub enum LanguageExperienceV8 {
     DeactivateDerivedAbstraction,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct CohfieldLanguageModelV8 {
     pub parent: CohfieldLanguageModelV7,
-}
-
-impl Default for CohfieldLanguageModelV8 {
-    fn default() -> Self {
-        Self {
-            parent: CohfieldLanguageModelV7::default(),
-        }
-    }
 }
 
 impl CohfieldLanguageModelV8 {
@@ -245,14 +237,14 @@ impl CohfieldLanguageModelV8 {
             if !next.relational.derived_abstractions.contains(&identity) {
                 next.relational.derived_abstractions.push(identity);
             }
-            let provenance_exists = next
-                .relational
-                .abstraction_formation_history
-                .iter()
-                .any(|record| {
-                    record.abstraction == identity
-                        && record.source_assessment_epoch == source_assessment_epoch
-                });
+            let provenance_exists =
+                next.relational
+                    .abstraction_formation_history
+                    .iter()
+                    .any(|record| {
+                        record.abstraction == identity
+                            && record.source_assessment_epoch == source_assessment_epoch
+                    });
             if !provenance_exists {
                 let epoch = next
                     .relational
@@ -260,13 +252,13 @@ impl CohfieldLanguageModelV8 {
                     .last()
                     .map(|record| record.epoch + 1)
                     .unwrap_or(1);
-                next.relational
-                    .abstraction_formation_history
-                    .push(DerivedAbstractionFormationRecordV8 {
+                next.relational.abstraction_formation_history.push(
+                    DerivedAbstractionFormationRecordV8 {
                         epoch,
                         abstraction: identity,
                         source_assessment_epoch,
-                    });
+                    },
+                );
             }
         }
         Ok(next)
@@ -308,7 +300,11 @@ impl CohfieldLanguageModelV8 {
         if !state.relational.derived_abstractions.contains(&abstraction) {
             return Err(LanguageErrorV8::UnknownDerivedAbstraction);
         }
-        Ok(Self::abstraction_relation_weight(state, abstraction, target))
+        Ok(Self::abstraction_relation_weight(
+            state,
+            abstraction,
+            target,
+        ))
     }
 
     fn apply_abstraction_learning(
@@ -339,9 +335,7 @@ impl CohfieldLanguageModelV8 {
                 .relational
                 .abstraction_relations
                 .iter_mut()
-                .find(|relation| {
-                    relation.abstraction == abstraction && relation.target == current
-                })
+                .find(|relation| relation.abstraction == abstraction && relation.target == current)
             {
                 relation.weight += self.parent.psi_gain;
             } else {
@@ -384,9 +378,7 @@ impl CohfieldLanguageModelV8 {
         if !self.valid_state(state) {
             return Err(LanguageErrorV8::InvalidDerivedAbstractionState);
         }
-        let parent_next = self
-            .parent
-            .evolve(&self.to_v7_state(state), input, 1.0)?;
+        let parent_next = self.parent.evolve(&self.to_v7_state(state), input, 1.0)?;
         let mut next = self.apply_v7_state(state, parent_next);
 
         if let Some(abstraction) = state.relational.active_derived_abstraction {
@@ -425,7 +417,10 @@ impl CohfieldLanguageModelV8 {
             .abstraction_formation_history
             .iter()
             .any(|record| {
-                !state.relational.derived_abstractions.contains(&record.abstraction)
+                !state
+                    .relational
+                    .derived_abstractions
+                    .contains(&record.abstraction)
                     || !state
                         .relational
                         .parent
@@ -439,13 +434,18 @@ impl CohfieldLanguageModelV8 {
         {
             return false;
         }
-        if state.relational.abstraction_relations.iter().any(|relation| {
-            !relation.weight.is_finite()
-                || !state
-                    .relational
-                    .derived_abstractions
-                    .contains(&relation.abstraction)
-        }) {
+        if state
+            .relational
+            .abstraction_relations
+            .iter()
+            .any(|relation| {
+                !relation.weight.is_finite()
+                    || !state
+                        .relational
+                        .derived_abstractions
+                        .contains(&relation.abstraction)
+            })
+        {
             return false;
         }
         for (index, relation) in state.relational.abstraction_relations.iter().enumerate() {
