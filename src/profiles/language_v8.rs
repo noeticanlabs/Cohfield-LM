@@ -7,6 +7,8 @@ use super::language_v7::{
     LanguageRelationalConfigurationV7, LanguageStateV7,
 };
 
+const SYMBOL_INDICES: [usize; 4] = [0, 1, 2, 3];
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DerivedAbstractionIdentityV8 {
     pub profile: InternalEquivalenceProfile,
@@ -116,7 +118,10 @@ impl CohfieldLanguageModelV8 {
         next
     }
 
-    pub fn migrate_from_v7(&self, state: &LanguageStateV7) -> Result<LanguageStateV8, LanguageErrorV8> {
+    pub fn migrate_from_v7(
+        &self,
+        state: &LanguageStateV7,
+    ) -> Result<LanguageStateV8, LanguageErrorV8> {
         let next = LanguageStateV8 {
             x: state.x,
             theta: state.theta,
@@ -164,16 +169,16 @@ impl CohfieldLanguageModelV8 {
     }
 
     fn valid_equivalence_relation(matrix: &[[bool; 4]; 4]) -> bool {
-        for left in 0..4 {
-            for right in 0..4 {
+        for left in SYMBOL_INDICES {
+            for right in SYMBOL_INDICES {
                 if matrix[left][right] != matrix[right][left] {
                     return false;
                 }
             }
         }
-        for left in 0..4 {
-            for middle in 0..4 {
-                for right in 0..4 {
+        for left in SYMBOL_INDICES {
+            for middle in SYMBOL_INDICES {
+                for right in SYMBOL_INDICES {
                     if Self::relation_value(matrix, left, middle)
                         && Self::relation_value(matrix, middle, right)
                         && !Self::relation_value(matrix, left, right)
@@ -200,12 +205,12 @@ impl CohfieldLanguageModelV8 {
 
         let mut visited = [false; 4];
         let mut identities = Vec::new();
-        for source in 0..4 {
+        for source in SYMBOL_INDICES {
             if visited[source] {
                 continue;
             }
             let mut members = [false; 4];
-            for candidate in 0..4 {
+            for candidate in SYMBOL_INDICES {
                 if Self::relation_value(&matrix, source, candidate) {
                     members[candidate] = true;
                     visited[candidate] = true;
