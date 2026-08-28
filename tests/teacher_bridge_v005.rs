@@ -1,4 +1,4 @@
-use cohfield_lm::teacher_bridge_v005::{run, S5, V5Curriculum, V5Mechanism};
+use cohfield_lm::teacher_bridge_v005::{run, V5Curriculum, V5Mechanism, S5};
 
 const EPS: f64 = 1.0e-12;
 const POSITIVE_FLOOR: f64 = 1.0e-6;
@@ -99,9 +99,7 @@ fn schema_without_third_correspondence_anchor_cannot_select_c3() {
     assert!(r.state.structure.source_role().is_some());
     assert!(r.state.structure.target_role().is_some());
     assert!(r.state.structure.binding_gain > POSITIVE_FLOOR);
-    assert!(
-        r.state.structure.slot_affinity[S5::B3.index()][S5::C3.index()].abs() <= EPS
-    );
+    assert!(r.state.structure.slot_affinity[S5::B3.index()][S5::C3.index()].abs() <= EPS);
 
     let probe = r.model.probe_teacher_off(&r.state, S5::B3, 2);
     assert!(probe.activation(2, S5::C3).unwrap().abs() <= EPS);
@@ -112,12 +110,8 @@ fn swapping_only_third_correspondence_moves_transfer_to_c2() {
     let curriculum = V5Curriculum::with_swapped_third_correspondence();
     let r = run(V5Mechanism::DiscoveredBinding, &curriculum);
 
-    assert!(
-        r.state.structure.slot_affinity[S5::B3.index()][S5::C2.index()] > POSITIVE_FLOOR
-    );
-    assert!(
-        r.state.structure.slot_affinity[S5::B3.index()][S5::C3.index()].abs() <= EPS
-    );
+    assert!(r.state.structure.slot_affinity[S5::B3.index()][S5::C2.index()] > POSITIVE_FLOOR);
+    assert!(r.state.structure.slot_affinity[S5::B3.index()][S5::C3.index()].abs() <= EPS);
 
     let probe = r.model.probe_teacher_off(&r.state, S5::B3, 2);
     assert!(probe.activation(1, S5::C2).unwrap() > POSITIVE_FLOOR);
@@ -224,18 +218,14 @@ fn frozen_exact_v005_diagnostics_are_stable() {
             <= REGRESSION_TOL
     );
     assert!(r.state.psi[S5::B3.index()][S5::C3.index()].abs() <= EPS);
+    assert!((r.state.structure.binding_gain - 0.181_508_508_639_410_8).abs() <= REGRESSION_TOL);
     assert!(
-        (r.state.structure.binding_gain - 0.181_508_508_639_410_8).abs() <= REGRESSION_TOL
-    );
-    assert!(
-        (r.state.structure.slot_affinity[S5::B1.index()][S5::C1.index()]
-            - 0.284_955_013_733_931_6)
+        (r.state.structure.slot_affinity[S5::B1.index()][S5::C1.index()] - 0.284_955_013_733_931_6)
             .abs()
             <= REGRESSION_TOL
     );
     assert!(
-        (r.state.structure.slot_affinity[S5::B2.index()][S5::C2.index()]
-            - 0.284_955_013_733_931_6)
+        (r.state.structure.slot_affinity[S5::B2.index()][S5::C2.index()] - 0.284_955_013_733_931_6)
             .abs()
             <= REGRESSION_TOL
     );
@@ -248,15 +238,12 @@ fn frozen_exact_v005_diagnostics_are_stable() {
 
     let probe = r.model.probe_teacher_off(&r.state, S5::B3, 3);
     assert!(
-        (probe.activation(1, S5::C3).unwrap() - 0.006_917_361_723_235_037).abs()
-            <= REGRESSION_TOL
+        (probe.activation(1, S5::C3).unwrap() - 0.006_917_361_723_235_037).abs() <= REGRESSION_TOL
     );
     assert!(
-        (probe.activation(2, S5::C3).unwrap() - 0.006_917_361_723_235_037).abs()
-            <= REGRESSION_TOL
+        (probe.activation(2, S5::C3).unwrap() - 0.006_917_361_723_235_037).abs() <= REGRESSION_TOL
     );
     assert!(
-        (probe.activation(3, S5::C3).unwrap() - 0.005_188_021_292_426_278).abs()
-            <= REGRESSION_TOL
+        (probe.activation(3, S5::C3).unwrap() - 0.005_188_021_292_426_278).abs() <= REGRESSION_TOL
     );
 }
