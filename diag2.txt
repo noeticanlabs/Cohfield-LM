@@ -1,0 +1,25 @@
+   Compiling cohfield-lm v0.1.0 (C:\Users\truea\OneDrive\Documents\New folder\cohfield.llm\Cohfield-LM)
+warning: cannot test inner items
+   --> tests\teacher_bridge_v003.rs:171:1
+    |
+171 | #[test]
+    | ^^^^^^^
+    |
+    = note: `#[warn(unnameable_test_items)]` on by default
+
+warning: function `diag_exact` is never used
+   --> tests\teacher_bridge_v003.rs:172:4
+    |
+172 | fn diag_exact() {
+    |    ^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `cohfield-lm` (test "teacher_bridge_v003") generated 2 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.48s
+     Running tests\teacher_bridge_v003.rs (target\debug\deps\teacher_bridge_v003-5f658d5024c92d48.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
