@@ -1,0 +1,60 @@
+{
+  "version": "CF-LM Teacher Bridge v0.02",
+  "branch": "agent/cf-lm-teacher-bridge-v002",
+  "relation_to_v001": "Reuses identical verified v0.01 bridge mechanics with no new adaptation law; adds branching curriculum, withheld two-hop combinations, structurally underivable negatives, and causal double-dissociation ablation.",
+  "teacher": "LLM-authored (GPT-5.6 Sol)",
+  "curriculum": {
+    "epochs": 64,
+    "local_pairs": ["A->B", "B->C", "B->D"],
+    "v001_edge_CD_absent": true,
+    "no_episode_targets_A": true,
+    "withheld_two_hop_combinations": ["A->C", "A->D"]
+  },
+  "learned_relations": {
+    "A_B": 0.6461059481081141,
+    "B_C": 0.6727467181467244,
+    "B_D": 0.7004859622518996,
+    "A_C": 0.0,
+    "A_D": 0.0,
+    "C_D": 0.0,
+    "underivable_into_A": 0.0,
+    "underivable_out_of_C": 0.0
+  },
+  "teacher_off_probe": {
+    "start": "A",
+    "continuation_steps": 2,
+    "trajectory": [
+      [0.5, 0.0, 0.0, 0.0],
+      [0.25, 0.06461059481081141, 0.0, 0.0],
+      [0.125, 0.06461059481081141, 0.008693313123296232, 0.009051762935543765]
+    ],
+    "withheld_C_activation_step_2": 0.008693313123296232,
+    "withheld_D_activation_step_2": 0.009051762935543765
+  },
+  "controls": {
+    "structurally_underivable_family": "all <= 1e-12 from every probe step",
+    "no_adaptation_withheld_C_step_2": 0.0,
+    "no_adaptation_withheld_D_step_2": 0.0,
+    "ablate_only_BC": {
+      "withheld_A_C_dies": "collapses to <= 1e-12",
+      "withheld_A_D_survives": 0.009051762935543765
+    },
+    "ablate_only_BD": {
+      "withheld_A_D_dies": "collapses to <= 1e-12",
+      "withheld_A_C_survives": 0.008693313123296232
+    },
+    "teacher_off_persistent_state_mutation": false,
+    "deterministic_across_repeated_runs": true
+  },
+  "inherited_surface_restoration": {
+    "tests_language_derived_abstraction_rs": "restored byte-identical to agent/cf-lm-015-derived-abstraction-impl",
+    "docs_CF_LM_015_IMPLEMENTATION_md": "restored byte-identical to agent/cf-lm-015-derived-abstraction-impl",
+    "cf_lm_015_conformance": "10/10 PASS"
+  },
+  "gates": {
+    "new_experiment_gate": "cargo test --test teacher_bridge_v001 + teacher_bridge_v002 (6/6 PASS); rustfmt new surface",
+    "inherited_regression_gate": "cargo test --all-targets (full inherited suite green, EXITCODE 0)"
+  },
+  "disposition": "PASS",
+  "claim_ceiling": "v0.02 is a withheld-combination composition result: combinations absent from training resolve through composition of locally taught relations, with route-specific causal dependence localized by double-dissociation ablation. It does not demonstrate grammar induction, semantic understanding, abstract rule learning, structural generalization to unseen instances, or natural-language competence."
+}

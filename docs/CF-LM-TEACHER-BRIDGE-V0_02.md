@@ -1,5 +1,15 @@
 # CF-LM Teacher Bridge v0.02 — Withheld-Combination Composition
 
+## Status
+
+**Disposition: PASS**
+
+Implementation branch: `agent/cf-lm-teacher-bridge-v002`
+
+Purpose: with the v0.01 bridge mechanics unchanged (no new adaptation law), teach a branching curriculum of local experiences such that CF-LM resolves multiple entire two-hop combinations it was never shown, with causal double-dissociation controls localizing each withheld combination to its own learned route.
+
+This is a withheld-combination **composition** result, not abstract transfer. Both CI gates (new-experiment gate + full inherited regression gate) must pass on the frozen branch head for the disposition to stand.
+
 ## Experimental question
 
 Can an LLM-authored branching curriculum teach only local experiences such that CF-LM resolves entire two-hop combinations it was never shown, while structurally underivable pairs stay silent, and does each withheld combination depend causally on its own learned route?
