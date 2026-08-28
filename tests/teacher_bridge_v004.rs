@@ -164,19 +164,13 @@ fn frozen_exact_v004_diagnostics_are_stable() {
             <= REGRESSION_TOL
     );
     assert!(r.state.base.psi[S::B3.index()][S::C3.index()].abs() <= EPS);
+    assert!((r.state.binding_gain - 0.283_907_866_679_987_8).abs() <= REGRESSION_TOL);
     assert!(
-        (r.state.binding_gain - 0.283_907_866_679_987_8).abs() <= REGRESSION_TOL
-    );
-    assert!(
-        (r.state.slot_affinity[S::B1.index()][S::C1.index()]
-            - 0.663_088_975_707_497_4)
-            .abs()
+        (r.state.slot_affinity[S::B1.index()][S::C1.index()] - 0.663_088_975_707_497_4).abs()
             <= REGRESSION_TOL
     );
     assert!(
-        (r.state.slot_affinity[S::B2.index()][S::C2.index()]
-            - 0.663_088_975_707_497_5)
-            .abs()
+        (r.state.slot_affinity[S::B2.index()][S::C2.index()] - 0.663_088_975_707_497_5).abs()
             <= REGRESSION_TOL
     );
     assert!((r.state.slot_affinity[S::B3.index()][S::C3.index()] - 1.0).abs() <= EPS);
