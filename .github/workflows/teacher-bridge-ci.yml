@@ -5,6 +5,7 @@ on:
     branches:
       - agent/cf-lm-teacher-bridge-v001
       - agent/cf-lm-teacher-bridge-v002
+      - agent/cf-lm-teacher-bridge-v003
   workflow_dispatch:
 
 jobs:
@@ -22,6 +23,8 @@ jobs:
           cargo test --test teacher_bridge_v001
           cargo test --test teacher_bridge_v002
           cargo test --test teacher_bridge_v003
+      - name: Verify v0.03 diagnostic test is discoverable
+        run: cargo test --test teacher_bridge_v003 frozen_exact_diagnostics_are_stable -- --exact
 
   inherited-regression-gate:
     runs-on: ubuntu-latest
