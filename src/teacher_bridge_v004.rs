@@ -36,14 +36,38 @@ impl V4Curriculum {
     pub fn llm_authored() -> V3Curriculum {
         V3Curriculum {
             episodes: vec![
-                V3Episode { source: S::A1, target: S::B1 },
-                V3Episode { source: S::A2, target: S::B2 },
-                V3Episode { source: S::A3, target: S::B3 },
-                V3Episode { source: S::A1, target: S::C1 },
-                V3Episode { source: S::A2, target: S::C2 },
-                V3Episode { source: S::A3, target: S::C3 },
-                V3Episode { source: S::B1, target: S::C1 },
-                V3Episode { source: S::B2, target: S::C2 },
+                V3Episode {
+                    source: S::A1,
+                    target: S::B1,
+                },
+                V3Episode {
+                    source: S::A2,
+                    target: S::B2,
+                },
+                V3Episode {
+                    source: S::A3,
+                    target: S::B3,
+                },
+                V3Episode {
+                    source: S::A1,
+                    target: S::C1,
+                },
+                V3Episode {
+                    source: S::A2,
+                    target: S::C2,
+                },
+                V3Episode {
+                    source: S::A3,
+                    target: S::C3,
+                },
+                V3Episode {
+                    source: S::B1,
+                    target: S::C1,
+                },
+                V3Episode {
+                    source: S::B2,
+                    target: S::C2,
+                },
             ],
             epochs: 64,
         }
@@ -53,12 +77,30 @@ impl V4Curriculum {
     pub fn anchors_only() -> V3Curriculum {
         V3Curriculum {
             episodes: vec![
-                V3Episode { source: S::A1, target: S::B1 },
-                V3Episode { source: S::A2, target: S::B2 },
-                V3Episode { source: S::A3, target: S::B3 },
-                V3Episode { source: S::A1, target: S::C1 },
-                V3Episode { source: S::A2, target: S::C2 },
-                V3Episode { source: S::A3, target: S::C3 },
+                V3Episode {
+                    source: S::A1,
+                    target: S::B1,
+                },
+                V3Episode {
+                    source: S::A2,
+                    target: S::B2,
+                },
+                V3Episode {
+                    source: S::A3,
+                    target: S::B3,
+                },
+                V3Episode {
+                    source: S::A1,
+                    target: S::C1,
+                },
+                V3Episode {
+                    source: S::A2,
+                    target: S::C2,
+                },
+                V3Episode {
+                    source: S::A3,
+                    target: S::C3,
+                },
             ],
             epochs: 64,
         }
@@ -69,13 +111,34 @@ impl V4Curriculum {
     pub fn without_third_target_anchor() -> V3Curriculum {
         V3Curriculum {
             episodes: vec![
-                V3Episode { source: S::A1, target: S::B1 },
-                V3Episode { source: S::A2, target: S::B2 },
-                V3Episode { source: S::A3, target: S::B3 },
-                V3Episode { source: S::A1, target: S::C1 },
-                V3Episode { source: S::A2, target: S::C2 },
-                V3Episode { source: S::B1, target: S::C1 },
-                V3Episode { source: S::B2, target: S::C2 },
+                V3Episode {
+                    source: S::A1,
+                    target: S::B1,
+                },
+                V3Episode {
+                    source: S::A2,
+                    target: S::B2,
+                },
+                V3Episode {
+                    source: S::A3,
+                    target: S::B3,
+                },
+                V3Episode {
+                    source: S::A1,
+                    target: S::C1,
+                },
+                V3Episode {
+                    source: S::A2,
+                    target: S::C2,
+                },
+                V3Episode {
+                    source: S::B1,
+                    target: S::C1,
+                },
+                V3Episode {
+                    source: S::B2,
+                    target: S::C2,
+                },
             ],
             epochs: 64,
         }
@@ -104,7 +167,9 @@ pub struct V4Probe {
 
 impl V4Probe {
     pub fn activation(&self, step: usize, symbol: S) -> Option<f64> {
-        self.trajectory.get(step).map(|frame| frame[symbol.index()])
+        self.trajectory
+            .get(step)
+            .map(|frame| frame[symbol.index()])
     }
 }
 
@@ -152,7 +217,11 @@ fn derive_binding_gain(state: &V3State, curriculum: &V3Curriculum) -> f64 {
             count += 1;
         }
     }
-    if count == 0 { 0.0 } else { total / count as f64 }
+    if count == 0 {
+        0.0
+    } else {
+        total / count as f64
+    }
 }
 
 impl V4Model {
@@ -176,10 +245,8 @@ impl V4Model {
                 let source_activity = state.base.x[source.index()];
                 for &target in &S::C_FAMILY {
                     let affinity = state.slot_affinity[source.index()][target.index()];
-                    next.base.x[target.index()] += self.base.relational_gain
-                        * state.binding_gain
-                        * affinity
-                        * source_activity;
+                    next.base.x[target.index()] +=
+                        self.base.relational_gain * state.binding_gain * affinity * source_activity;
                 }
             }
         }
