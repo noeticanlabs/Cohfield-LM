@@ -167,9 +167,7 @@ pub struct V4Probe {
 
 impl V4Probe {
     pub fn activation(&self, step: usize, symbol: S) -> Option<f64> {
-        self.trajectory
-            .get(step)
-            .map(|frame| frame[symbol.index()])
+        self.trajectory.get(step).map(|frame| frame[symbol.index()])
     }
 }
 
