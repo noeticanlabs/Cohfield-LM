@@ -7,6 +7,7 @@ on:
       - agent/cf-lm-teacher-bridge-v002
       - agent/cf-lm-teacher-bridge-v003
       - agent/cf-lm-teacher-bridge-v004
+      - agent/cf-lm-teacher-bridge-v005
   workflow_dispatch:
 
 jobs:
@@ -18,17 +19,20 @@ jobs:
         with:
           components: rustfmt
       - name: Format check new surface
-        run: rustfmt --edition 2021 --check src/teacher_bridge.rs src/teacher_bridge_v002.rs src/teacher_bridge_v003.rs src/teacher_bridge_v004.rs tests/teacher_bridge_v001.rs tests/teacher_bridge_v002.rs tests/teacher_bridge_v003.rs tests/teacher_bridge_v004.rs
+        run: rustfmt --edition 2021 --check src/teacher_bridge.rs src/teacher_bridge_v002.rs src/teacher_bridge_v003.rs src/teacher_bridge_v004.rs src/teacher_bridge_v005.rs tests/teacher_bridge_v001.rs tests/teacher_bridge_v002.rs tests/teacher_bridge_v003.rs tests/teacher_bridge_v004.rs tests/teacher_bridge_v005.rs
       - name: Compile and run teacher bridge tests
         run: |
           cargo test --test teacher_bridge_v001
           cargo test --test teacher_bridge_v002
           cargo test --test teacher_bridge_v003
           cargo test --test teacher_bridge_v004
+          cargo test --test teacher_bridge_v005
       - name: Verify v0.03 diagnostic test is discoverable
         run: cargo test --test teacher_bridge_v003 frozen_exact_diagnostics_are_stable -- --exact
       - name: Verify v0.04 diagnostic test is discoverable
         run: cargo test --test teacher_bridge_v004 frozen_exact_v004_diagnostics_are_stable -- --exact
+      - name: Verify v0.05 diagnostic test is discoverable
+        run: cargo test --test teacher_bridge_v005 frozen_exact_v005_diagnostics_are_stable -- --exact
 
   inherited-regression-gate:
     runs-on: ubuntu-latest
