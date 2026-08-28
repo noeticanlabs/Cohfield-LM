@@ -1,0 +1,85 @@
+{
+  "experiment": "CF-LM Teacher Bridge v0.05",
+  "status": "PASS",
+  "claim": "bounded experience-derived role discovery plus selective structural transfer",
+  "branch": "agent/cf-lm-teacher-bridge-v005",
+  "first_green_implementation_head": "e6a4829d4f34069b8d42d77fcaf23c850cca4e9a",
+  "github_actions_run": 33171710501,
+  "curriculum": {
+    "epochs": 64,
+    "visible_pair_count": 14,
+    "withheld_relation": "B3 -> C3",
+    "withheld_direct_edge_after_training": 0.0,
+    "neutral_role_anchors": ["R1", "R2"],
+    "designer_supplied_family_arrays": false
+  },
+  "discovered_structure": {
+    "role_count": 2,
+    "role_1": {
+      "anchor": "R1",
+      "members": ["B1", "B2", "B3"]
+    },
+    "role_2": {
+      "anchor": "R2",
+      "members": ["C1", "C2", "C3"]
+    },
+    "selected_schema_direction": "R1-neighborhood -> R2-neighborhood",
+    "binding_gain": 0.1815085086394108,
+    "slot_affinity": {
+      "B1_C1": 0.2849550137339316,
+      "B2_C2": 0.2849550137339316,
+      "B3_C3": 0.38110399204354856,
+      "cross_slot_affinities": 0.0
+    }
+  },
+  "teacher_off_probe_from_B3": {
+    "C1": [0.0, 0.0, 0.0, 0.0],
+    "C2": [0.0, 0.0, 0.0, 0.0],
+    "C3": [0.0, 0.006917361723235037, 0.006917361723235037, 0.005188021292426278]
+  },
+  "frozen_psi_diagnostics": {
+    "A3_B3": 0.11872876640237773,
+    "A3_C3": 0.13402922344557108,
+    "R1_B3": 0.15130143504180357,
+    "R2_C3": 0.1707994992226866,
+    "B3_C3": 0.0
+  },
+  "causal_controls": {
+    "plain_runtime": "no C activation from B3",
+    "remove_role_anchor_experience": "no discovered roles and no transfer",
+    "remove_visible_cross_role_schema": "roles discovered but no schema direction/gain and no transfer",
+    "remove_A3_to_C3_correspondence_anchor": "schema remains but B3/C3 affinity is zero and no transfer",
+    "swap_A3_target_from_C3_to_C2": "teacher-off response moves from C3 to C2",
+    "zero_binding_gain": "transfer collapses without changing Psi, roles, or affinity",
+    "zero_B3_C3_affinity": "transfer collapses without changing Psi, roles, or schema gain",
+    "arbitrary_surface_relabeling": "mapped held-out relation still transfers while mapped direct edge remains zero",
+    "forbidden_family_helper_audit": "PASS",
+    "teacher_off_nonmutation": "PASS",
+    "determinism": "PASS"
+  },
+  "ci": {
+    "teacher_bridge_v001": "4/4",
+    "teacher_bridge_v002": "6/6",
+    "teacher_bridge_v003": "10/10",
+    "teacher_bridge_v004": "11/11",
+    "teacher_bridge_v005": "14/14",
+    "v003_exact_diagnostic": "PASS",
+    "v004_exact_diagnostic": "PASS",
+    "v005_exact_diagnostic": "PASS",
+    "rustfmt": "PASS",
+    "cargo_test_all_targets": "PASS"
+  },
+  "claim_ceiling": "Given visible neutral relation anchors and an engineered generic role-discovery rule, CF-LM can derive source/target role sets from persistent relational neighborhoods, infer a directed cross-role schema, preserve member correspondence, and selectively activate a held-out matched target after teacher removal while the direct withheld persistent edge remains zero.",
+  "not_established": [
+    "unprompted discovery of arbitrary latent roles",
+    "role discovery without engineered neutral anchor structure",
+    "learning the role-discovery rule itself",
+    "invention of unseen symbols",
+    "natural-language semantics",
+    "grammar induction",
+    "unrestricted analogy",
+    "general abstract reasoning",
+    "open-domain language competence"
+  ],
+  "next_experiment": "v0.06 should remove the neutral common-predecessor role anchors and test whether role classes can be recovered from distributed higher-order relational motifs rather than a single shared-anchor neighborhood."
+}
