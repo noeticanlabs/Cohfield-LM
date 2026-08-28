@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  new-experiment-gate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,3 +21,11 @@ jobs:
         run: |
           cargo test --test teacher_bridge_v001
           cargo test --test teacher_bridge_v002
+
+  inherited-regression-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Full inherited regression suite
+        run: cargo test --all-targets
