@@ -1,6 +1,4 @@
-use cohfield_lm::profiles::language::{
-    CohfieldLanguageModelV1, LanguageState, SurfaceSymbol,
-};
+use cohfield_lm::profiles::language::{CohfieldLanguageModelV1, LanguageState, SurfaceSymbol};
 use cohfield_lm::teacher_bridge::{CfLmTeacherBridgeV001, TeacherCurriculumV001};
 
 const EPS: f64 = 1.0e-12;
