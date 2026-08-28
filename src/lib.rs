@@ -12,6 +12,7 @@ pub mod teacher_bridge;
 pub mod teacher_bridge_v002;
 pub mod teacher_bridge_v003;
 pub mod teacher_bridge_v004;
+pub mod teacher_bridge_v005;
 
 pub use counterfactual::{
     binary_survival, mean_recovery_margin, recovery_margin, CounterfactualProfile,
