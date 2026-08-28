@@ -168,10 +168,7 @@ fn recognize(
     cue: &[SurfaceSymbol],
 ) -> LanguageStateV7 {
     model
-        .adapt(
-            state,
-            &LanguageExperienceV7::RecognizeContext(cue.to_vec()),
-        )
+        .adapt(state, &LanguageExperienceV7::RecognizeContext(cue.to_vec()))
         .expect("frozen context recognition must be valid")
 }
 
@@ -191,7 +188,10 @@ fn record_outcome(
     observed: [f64; 5],
 ) -> LanguageStateV7 {
     model
-        .adapt(state, &LanguageExperienceV7::RecordObservedConsequence(observed))
+        .adapt(
+            state,
+            &LanguageExperienceV7::RecordObservedConsequence(observed),
+        )
         .expect("frozen observed consequence must yield a unique supported profile")
 }
 
@@ -305,15 +305,27 @@ fn cf_lm_014_v6_to_v7_migration_preserves_parent_state_and_starts_empty_outcome_
     assert_eq!(v7.x, v6.x);
     assert_eq!(v7.theta, v6.theta);
     assert_eq!(v7.relational.sequential, v6.relational.sequential);
-    assert_eq!(v7.relational.selected_profile, v6.relational.selected_profile);
-    assert_eq!(v7.relational.assessment_history, v6.relational.assessment_history);
-    assert_eq!(v7.relational.current_context_epoch, v6.relational.current_context_epoch);
+    assert_eq!(
+        v7.relational.selected_profile,
+        v6.relational.selected_profile
+    );
+    assert_eq!(
+        v7.relational.assessment_history,
+        v6.relational.assessment_history
+    );
+    assert_eq!(
+        v7.relational.current_context_epoch,
+        v6.relational.current_context_epoch
+    );
     assert_eq!(v7.relational.context_history, v6.relational.context_history);
     assert_eq!(
         v7.relational.projection_selection_history,
         v6.relational.projection_selection_history
     );
-    assert_eq!(v7.relational.applicability_history, v6.relational.applicability_history);
+    assert_eq!(
+        v7.relational.applicability_history,
+        v6.relational.applicability_history
+    );
     assert_eq!(
         v7.relational.learned_selection_history,
         v6.relational.learned_selection_history
@@ -340,8 +352,7 @@ fn cf_lm_014_counterfactual_predictions_match_frozen_outcomes_without_mutating_a
     }
     assert!(predicted_bc.iter().all(|value| value.abs() <= EPS_FLOOR));
     assert!(
-        (euclidean5(predicted_ab, predicted_bc) - 0.026_575_098_283_946_105).abs()
-            < REGRESSION_TOL
+        (euclidean5(predicted_ab, predicted_bc) - 0.026_575_098_283_946_105).abs() < REGRESSION_TOL
     );
     assert_eq!(trained, before);
 }
@@ -355,7 +366,10 @@ fn cf_lm_014_unlabeled_observed_consequences_infer_frozen_profiles_without_runti
     assert_eq!(learned.relational.outcome_applicability_history.len(), 4);
     assert_eq!(learned.relational.selected_profile, None);
     assert_eq!(learned.relational.sequential, trained.relational.sequential);
-    assert_eq!(learned.relational.assessment_history, trained.relational.assessment_history);
+    assert_eq!(
+        learned.relational.assessment_history,
+        trained.relational.assessment_history
+    );
     assert_eq!(
         learned
             .relational
@@ -423,14 +437,8 @@ fn cf_lm_014_heldout_contexts_generalize_from_outcomes_and_invert_old_projection
         .expect("K_C selection must exist")
         .candidate_distances;
     assert_eq!(inferred_c.relational.selected_profile, Some(p_ab()));
-    assert!(
-        (distance_for(distances_c, p_ab()) - 0.306_186_217_847_897_24).abs()
-            < REGRESSION_TOL
-    );
-    assert!(
-        (distance_for(distances_c, p_bc()) - 0.847_791_247_890_658_5).abs()
-            < REGRESSION_TOL
-    );
+    assert!((distance_for(distances_c, p_ab()) - 0.306_186_217_847_897_24).abs() < REGRESSION_TOL);
+    assert!((distance_for(distances_c, p_bc()) - 0.847_791_247_890_658_5).abs() < REGRESSION_TOL);
     assert!(old_projection_score(p_ab(), activity_c) < old_projection_score(p_bc(), activity_c));
 
     let recognized_a = recognize(&model, &learned, &K_A);
@@ -448,14 +456,8 @@ fn cf_lm_014_heldout_contexts_generalize_from_outcomes_and_invert_old_projection
         .expect("K_A selection must exist")
         .candidate_distances;
     assert_eq!(inferred_a.relational.selected_profile, Some(p_bc()));
-    assert!(
-        (distance_for(distances_a, p_ab()) - 0.847_791_247_890_658_5).abs()
-            < REGRESSION_TOL
-    );
-    assert!(
-        (distance_for(distances_a, p_bc()) - 0.306_186_217_847_897_24).abs()
-            < REGRESSION_TOL
-    );
+    assert!((distance_for(distances_a, p_ab()) - 0.847_791_247_890_658_5).abs() < REGRESSION_TOL);
+    assert!((distance_for(distances_a, p_bc()) - 0.306_186_217_847_897_24).abs() < REGRESSION_TOL);
     assert!(old_projection_score(p_bc(), activity_a) < old_projection_score(p_ab(), activity_a));
 }
 
@@ -472,14 +474,8 @@ fn cf_lm_014_midpoint_observed_consequence_fails_ambiguous_without_successor_sta
 
     assert_eq!(result, Err(LanguageErrorV7::AmbiguousOutcome));
     assert_eq!(recognized, before);
-    assert!(
-        (euclidean5(Y_TRANSFER, Y_MID) - 0.013_287_549_141_973_052).abs()
-            < REGRESSION_TOL
-    );
-    assert!(
-        (euclidean5(Y_ZERO, Y_MID) - 0.013_287_549_141_973_052).abs()
-            < REGRESSION_TOL
-    );
+    assert!((euclidean5(Y_TRANSFER, Y_MID) - 0.013_287_549_141_973_052).abs() < REGRESSION_TOL);
+    assert!((euclidean5(Y_ZERO, Y_MID) - 0.013_287_549_141_973_052).abs() < REGRESSION_TOL);
 }
 
 #[test]
@@ -523,17 +519,17 @@ fn cf_lm_014_outcome_grounded_applicability_controls_transfer_and_restores_it_wi
     let assessments = learned.relational.assessment_history.clone();
     let outcomes = learned.relational.outcome_applicability_history.clone();
 
-    assert!((sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()]
-        - 0.557_984_402_843_442_6)
-        .abs()
-        < REGRESSION_TOL);
+    assert!(
+        (sequential[SurfaceSymbol::C.index()][SurfaceSymbol::A.index()] - 0.557_984_402_843_442_6)
+            .abs()
+            < REGRESSION_TOL
+    );
     assert!(sequential[SurfaceSymbol::D.index()][SurfaceSymbol::A.index()].abs() <= EPS_FLOOR);
 
     let k_c = infer_outcome(&model, &recognize(&model, &learned, &K_C));
     let first = probe(&model, &k_c, SurfaceSymbol::D, 4);
     assert!(
-        (first[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs()
-            < REGRESSION_TOL
+        (first[2][SurfaceSymbol::A.index()] - 0.011_159_688_056_868_854).abs() < REGRESSION_TOL
     );
 
     let k_a = infer_outcome(&model, &recognize(&model, &k_c, &K_A));

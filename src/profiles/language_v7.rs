@@ -1,15 +1,12 @@
 use crate::{AdaptiveContinuationModel, StateRoles};
 
-use super::language::{
-    LanguageInput, LanguageObservationProfile, LanguageResponse, SurfaceSymbol,
-};
+use super::language::{LanguageInput, LanguageObservationProfile, LanguageResponse, SurfaceSymbol};
 use super::language_v2::InternalEquivalenceProfile;
 use super::language_v3::ConsequenceEquivalenceAssessment;
 use super::language_v5::{ContextRecognitionRecordV5, ContextSelectionRecordV5};
 use super::language_v6::{
-    ApplicabilityTeachingRecordV6, CohfieldLanguageModelV6, LanguageErrorV6,
-    LanguageExperienceV6, LanguageRelationalConfigurationV6, LanguageStateV6,
-    LearnedApplicabilitySelectionRecordV6,
+    ApplicabilityTeachingRecordV6, CohfieldLanguageModelV6, LanguageErrorV6, LanguageExperienceV6,
+    LanguageRelationalConfigurationV6, LanguageStateV6, LearnedApplicabilitySelectionRecordV6,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -238,31 +235,41 @@ impl CohfieldLanguageModelV7 {
             return false;
         }
 
-        let outcome_records_valid = state.relational.outcome_applicability_history.iter().all(
-            |record| {
-                record.observed_consequence.iter().all(|value| value.is_finite())
-                    && record
-                        .candidate_errors
+        let outcome_records_valid =
+            state
+                .relational
+                .outcome_applicability_history
+                .iter()
+                .all(|record| {
+                    record
+                        .observed_consequence
                         .iter()
-                        .all(|entry| entry.error.is_finite())
-                    && state.relational.context_history.iter().any(|context| {
-                        context.epoch == record.context_epoch && context.activity == record.activity
-                    })
-            },
-        );
-        let selection_records_valid = state.relational.outcome_selection_history.iter().all(
-            |record| {
-                record
-                    .candidate_distances
-                    .iter()
-                    .all(|entry| entry.distance.is_finite())
-                    && state
-                        .relational
-                        .context_history
+                        .all(|value| value.is_finite())
+                        && record
+                            .candidate_errors
+                            .iter()
+                            .all(|entry| entry.error.is_finite())
+                        && state.relational.context_history.iter().any(|context| {
+                            context.epoch == record.context_epoch
+                                && context.activity == record.activity
+                        })
+                });
+        let selection_records_valid =
+            state
+                .relational
+                .outcome_selection_history
+                .iter()
+                .all(|record| {
+                    record
+                        .candidate_distances
                         .iter()
-                        .any(|context| context.epoch == record.context_epoch)
-            },
-        );
+                        .all(|entry| entry.distance.is_finite())
+                        && state
+                            .relational
+                            .context_history
+                            .iter()
+                            .any(|context| context.epoch == record.context_epoch)
+                });
 
         outcome_records_valid && selection_records_valid
     }
@@ -322,11 +329,12 @@ impl CohfieldLanguageModelV7 {
         &self,
         state: &'a LanguageStateV7,
     ) -> Result<&'a ContextRecognitionRecordV5, LanguageErrorV7> {
-        let epoch = state.relational.current_context_epoch.ok_or(
-            LanguageErrorV7::BaseV6(LanguageErrorV6::BaseV5(
+        let epoch = state
+            .relational
+            .current_context_epoch
+            .ok_or(LanguageErrorV7::BaseV6(LanguageErrorV6::BaseV5(
                 super::language_v5::LanguageErrorV5::NoRecognizedContext,
-            )),
-        )?;
+            )))?;
         state
             .relational
             .context_history
@@ -447,9 +455,7 @@ impl CohfieldLanguageModelV7 {
             .filter(|(index, _)| *index != winner)
             .map(|(_, entry)| entry.error)
             .fold(f64::INFINITY, f64::min);
-        if runner_up.is_finite()
-            && runner_up - minimum_error <= self.minimum_outcome_error_margin
-        {
+        if runner_up.is_finite() && runner_up - minimum_error <= self.minimum_outcome_error_margin {
             return Err(LanguageErrorV7::AmbiguousOutcome);
         }
 
@@ -462,16 +468,16 @@ impl CohfieldLanguageModelV7 {
             .unwrap_or(1);
 
         let mut next = state.clone();
-        next.relational
-            .outcome_applicability_history
-            .push(ConsequenceGroundedApplicabilityRecordV7 {
+        next.relational.outcome_applicability_history.push(
+            ConsequenceGroundedApplicabilityRecordV7 {
                 epoch: next_epoch,
                 context_epoch: context.epoch,
                 activity: context.activity,
                 observed_consequence: observed,
                 candidate_errors,
                 inferred_profile,
-            });
+            },
+        );
         Ok(next)
     }
 
