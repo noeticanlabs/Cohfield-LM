@@ -1,0 +1,40 @@
+{
+  "version": "CF-LM Teacher Bridge v0.01",
+  "branch": "agent/cf-lm-teacher-bridge-v001",
+  "curriculum": {
+    "teacher": "GPT-5.6 Sol",
+    "epochs": 64,
+    "local_pairs": ["A->B", "B->C", "C->D"],
+    "full_chain_exposed": false
+  },
+  "learned_relations": {
+    "A_B": 0.6461059481081141,
+    "B_C": 0.6727467181467244,
+    "C_D": 0.7004859622518996,
+    "A_D": 0.0
+  },
+  "teacher_off_probe": {
+    "start": "A",
+    "continuation_steps": 3,
+    "trajectory": [
+      [0.5, 0.0, 0.0, 0.0],
+      [0.25, 0.06461059481081141, 0.0, 0.0],
+      [0.125, 0.06461059481081141, 0.008693313123296232, 0.0],
+      [0.0625, 0.04845794610810856, 0.013039969684944348, 0.0012179087616658458]
+    ],
+    "held_out_D_activation_step_3": 0.0012179087616658458
+  },
+  "controls": {
+    "no_adaptation_D_activation_step_3": 0.0,
+    "middle_relation_ablation_D_activation_step_3": 0.0,
+    "teacher_off_persistent_state_mutation": false
+  },
+  "rust_ci": {
+    "run_id": 33135889920,
+    "format_new_surface": "success",
+    "teacher_bridge_test_binary": "success",
+    "conclusion": "success"
+  },
+  "disposition": "PASS",
+  "claim_ceiling": "LLM-authored visible local-pair exposure can train existing CF-LM persistent relations whose teacher-off continuation dynamics compose into a held-out multi-hop consequence. This does not establish semantics, grammar induction, abstract rule learning, or open-domain language competence."
+}
