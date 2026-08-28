@@ -1,0 +1,81 @@
+{
+  "version": "CF-LM Teacher Bridge v0.04",
+  "status": "PASS - bounded role-preserving structural binding",
+  "branch": "agent/cf-lm-teacher-bridge-v004",
+  "curriculum": {
+    "epochs": 64,
+    "visible_pairs": [
+      "A1->B1",
+      "A2->B2",
+      "A3->B3",
+      "A1->C1",
+      "A2->C2",
+      "A3->C3",
+      "B1->C1",
+      "B2->C2"
+    ],
+    "withheld_relation": "B3->C3",
+    "c3_seen_elsewhere": true,
+    "direct_b3_c3_taught": false
+  },
+  "persistent_relations": {
+    "A1_B1": 0.21828695760528818,
+    "A2_B2": 0.22728754436202436,
+    "A3_B3": 0.2366592506893215,
+    "A1_C1": 0.2464173788935043,
+    "A2_C2": 0.25657786223813445,
+    "A3_C3": 0.26715729096015667,
+    "B1_C1": 0.27817293935876375,
+    "B2_C2": 0.2896427940012118,
+    "B3_C3": 0.0
+  },
+  "structural_binding": {
+    "family_membership_designer_supplied": true,
+    "pair_identity_designer_supplied": false,
+    "binding_gain": 0.2839078666799878,
+    "slot_affinity": {
+      "B1_C1": 0.6630889757074974,
+      "B2_C2": 0.6630889757074975,
+      "B3_C3": 1.0,
+      "cross_slots": 0.0
+    }
+  },
+  "teacher_off_probe_from_B3": {
+    "C1": [0.0, 0.0, 0.0, 0.0],
+    "C2": [0.0, 0.0, 0.0, 0.0],
+    "C3": [0.0, 0.028390786667998782, 0.028390786667998782, 0.021293090000999087]
+  },
+  "controls": {
+    "plain_all_c_targets_silent": true,
+    "binding_gain_ablation_collapses_c3": true,
+    "b3_c3_affinity_ablation_collapses_c3": true,
+    "affinity_swap_moves_response_to_c2": true,
+    "anchors_only_no_schema_no_transfer": true,
+    "schema_without_third_anchor_no_c3_transfer": true,
+    "teacher_off_nonmutating": true,
+    "deterministic": true,
+    "v004_plain_equals_v003_plain": true
+  },
+  "ci": {
+    "first_green_implementation_head": "51ca37b3e9e14401bab70fa11a96fbde021fead8",
+    "run_id": 33170700658,
+    "rustfmt": "pass",
+    "teacher_bridge_v001": "4/4",
+    "teacher_bridge_v002": "6/6",
+    "teacher_bridge_v003": "10/10",
+    "teacher_bridge_v004": "11/11",
+    "v003_exact_diagnostic": "pass",
+    "v004_exact_diagnostic": "pass",
+    "full_inherited_regression": "pass"
+  },
+  "claim_ceiling": "Given designer-supplied source and target families, CF-LM can combine a learned global relation schema with learned incoming-relation correspondence to selectively reach a structurally matched held-out target while the direct withheld relation remains absent.",
+  "not_claimed": [
+    "autonomous role-family discovery",
+    "unseen symbol invention",
+    "natural-language semantics",
+    "grammar induction",
+    "unrestricted analogy",
+    "general abstract reasoning",
+    "open-domain language competence"
+  ]
+}
