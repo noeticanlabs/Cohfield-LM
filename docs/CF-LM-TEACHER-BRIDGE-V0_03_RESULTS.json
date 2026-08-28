@@ -1,0 +1,60 @@
+{
+  "version": "CF-LM Teacher Bridge v0.03",
+  "branch": "agent/cf-lm-teacher-bridge-v003",
+  "disposition": "BOUNDARY PASS — structural transfer remains unproven",
+  "curriculum": {
+    "epochs": 64,
+    "taught": [
+      "A1->B1",
+      "A2->B2",
+      "A3->B3",
+      "B1->C1",
+      "B2->C2"
+    ],
+    "withheld": "B3->C3"
+  },
+  "frozen_state": {
+    "psi_A3_B3": 0.40338056149374846,
+    "psi_B1_C1": 0.42001307943955485,
+    "psi_B2_C2": 0.437331402998287,
+    "psi_B3_C3": 0.0,
+    "w_pool_c": 0.8573444824378412
+  },
+  "plain": {
+    "B3_step_1": 0.04033805614937485,
+    "C1_step_3": 0.0,
+    "C2_step_3": 0.0,
+    "C3_step_3": 0.0,
+    "interpretation": "composition boundary: learned edges do not imply an unlearned edge"
+  },
+  "member_abstraction": {
+    "C1_step_3": 0.0016942511181904604,
+    "C2_step_3": 0.0017641098690029781,
+    "C3_step_3": 0.0,
+    "interpretation": "abstraction-mediated transfer from unseen source member to already learned targets; no unseen-target transfer"
+  },
+  "target_pool": {
+    "C1_step_3": 0.003458360987193436,
+    "C2_step_3": 0.003458360987193436,
+    "C3_step_3": 0.003458360987193436,
+    "specificity": false,
+    "interpretation": "pooled C-family broadcast, not aligned B3->C3 structural inference"
+  },
+  "causal_controls": {
+    "direct_teaching_positive_control": "PASS",
+    "member_weight_surgical_ablation": "PASS",
+    "target_pool_surgical_ablation": "PASS",
+    "teacher_off_nonmutation": "PASS",
+    "deterministic_replay": "PASS",
+    "direct_B3_C3_absent_in_non_direct_arms": "PASS"
+  },
+  "ci": {
+    "validated_run_id": 33166350973,
+    "v001": "4/4",
+    "v002": "6/6",
+    "v003": "10/10",
+    "explicit_diagnostic": "1/1",
+    "inherited_regression_gate": "PASS"
+  },
+  "next_required_capability": "role-preserving relational binding that selects C3 for B3 while suppressing C1/C2, without direct Psi[B3,C3] teaching"
+}
