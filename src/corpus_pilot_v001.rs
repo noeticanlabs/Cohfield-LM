@@ -73,12 +73,7 @@ impl LazyByteModel {
         1.0 - self.psi_decay
     }
 
-    fn relation_at_step(
-        &self,
-        state: &LazyByteState,
-        index: usize,
-        at_step: u64,
-    ) -> f64 {
+    fn relation_at_step(&self, state: &LazyByteState, index: usize, at_step: u64) -> f64 {
         let stored = state.weights[index];
         if stored == 0.0 {
             return 0.0;
@@ -89,11 +84,7 @@ impl LazyByteModel {
     }
 
     pub fn relation(&self, state: &LazyByteState, source: u8, target: u8) -> f64 {
-        self.relation_at_step(
-            state,
-            relation_index(source, target),
-            state.adaptation_step,
-        )
+        self.relation_at_step(state, relation_index(source, target), state.adaptation_step)
     }
 
     fn adapt_pair(&self, state: &mut LazyByteState, source: u8, target: u8) {
@@ -127,12 +118,7 @@ impl LazyByteModel {
         state
     }
 
-    fn step_field(
-        &self,
-        state: &LazyByteState,
-        current: &[f64],
-        input: Option<u8>,
-    ) -> Vec<f64> {
+    fn step_field(&self, state: &LazyByteState, current: &[f64], input: Option<u8>) -> Vec<f64> {
         let mut next = vec![0.0; BYTE_COUNT];
         for source in 0..BYTE_COUNT {
             let source_activity = current[source];
@@ -201,10 +187,7 @@ fn rank_descending(field: &[f64], target: u8) -> usize {
 }
 
 fn l1(left: &[f64], right: &[f64]) -> f64 {
-    left.iter()
-        .zip(right)
-        .map(|(a, b)| (a - b).abs())
-        .sum()
+    left.iter().zip(right).map(|(a, b)| (a - b).abs()).sum()
 }
 
 fn mean(values: &[f64]) -> f64 {
@@ -262,13 +245,14 @@ pub fn evaluate_holdout(
         let boundary = model.continuation_field(state, boundary_only(&record.input));
 
         let target_activation = actual[target as usize];
-        let maximum = actual
-            .iter()
-            .copied()
-            .fold(f64::NEG_INFINITY, f64::max);
+        let maximum = actual.iter().copied().fold(f64::NEG_INFINITY, f64::max);
         correct.push(target_activation);
         ranks.push(rank_descending(&actual, target) as f64);
-        top1.push(if target_activation >= maximum { 1.0 } else { 0.0 });
+        top1.push(if target_activation >= maximum {
+            1.0
+        } else {
+            0.0
+        });
         rotated_correct.push(rotated[target as usize]);
         boundary_correct.push(boundary[target as usize]);
         rotated_l1.push(l1(&actual, &rotated));
