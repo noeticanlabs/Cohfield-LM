@@ -5,6 +5,7 @@
 //! adaptation, observation, and optional counterfactual semantics.
 
 pub mod corpus_bridge_v001;
+pub mod corpus_pilot_v001;
 pub mod counterfactual;
 pub mod geometry;
 pub mod model;
