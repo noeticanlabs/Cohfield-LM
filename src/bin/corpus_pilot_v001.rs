@@ -54,7 +54,10 @@ fn main() {
         "  \"true_mean_correct_activation\": {:.17},",
         report.true_trained.mean_correct_activation
     );
-    println!("  \"true_mean_rank\": {:.17},", report.true_trained.mean_rank);
+    println!(
+        "  \"true_mean_rank\": {:.17},",
+        report.true_trained.mean_rank
+    );
     println!(
         "  \"true_top1_or_tied_rate\": {:.17},",
         report.true_trained.top1_or_tied_rate
