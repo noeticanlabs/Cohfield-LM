@@ -1,0 +1,50 @@
+{
+  "useful_birth_committed": {
+    "pass": true,
+    "commit": true,
+    "gain": 0.5373366408112263,
+    "baseline_cost": 1.7308444859367218,
+    "trial_cost": 1.1935078451254955
+  },
+  "neutral_birth_rejected": {
+    "pass": true,
+    "commit": false,
+    "gain": -0.02533991969771554
+  },
+  "harmful_birth_rejected": {
+    "pass": true,
+    "commit": false,
+    "gain": -0.03425219470942076
+  },
+  "utility_depends_on_structural_pressure": {
+    "pass": true,
+    "hotspot_gain": 0.5373366408112263,
+    "uniform_gain": -0.052165838252896,
+    "uniform_commit": false
+  },
+  "complexity_cost_opposes_unbounded_growth": {
+    "pass": true,
+    "zero_penalty_gain": 0.5473366408112263,
+    "high_penalty_gain": 0.5073366408112263
+  },
+  "utility_selects_structurally_relevant_birth": {
+    "pass": true,
+    "stressed_source_gain": 0.5373366408112263,
+    "wrong_source_gain": -0.2534268365705221,
+    "wrong_source_commit": false
+  },
+  "deterministic_utility_replay": {
+    "pass": true,
+    "byte_equivalent": true
+  },
+  "proposal_commit_separation": {
+    "pass": true,
+    "event_sequence": ["BIRTH_PROPOSAL", "COMMIT"]
+  },
+  "summary": {
+    "passed": 8,
+    "total": 8,
+    "overall_pass": true,
+    "pilot_status": "UTILITY_GOVERNED_STRUCTURAL_SURVIVAL_PRESENT"
+  }
+}
