@@ -1,0 +1,28 @@
+name: CF-LM Corpus Bridge CI
+
+on:
+  push:
+    branches:
+      - agent/cf-lm-corpus-bridge-v001
+  workflow_dispatch:
+
+jobs:
+  corpus-bridge-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Format check corpus bridge surface
+        run: rustfmt --edition 2021 --check src/corpus_bridge_v001.rs tests/corpus_bridge_v001.rs src/lib.rs
+      - name: Run corpus bridge tests
+        run: cargo test --test corpus_bridge_v001
+
+  inherited-regression-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Full inherited regression suite
+        run: cargo test --all-targets
