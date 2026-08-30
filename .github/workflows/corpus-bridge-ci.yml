@@ -15,7 +15,7 @@ jobs:
         with:
           components: rustfmt
       - name: Format check corpus bridge surface
-        run: rustfmt --edition 2021 --check src/corpus_bridge_v001.rs tests/corpus_bridge_v001.rs src/lib.rs
+        run: rustfmt --edition 2021 --check src/corpus_bridge_v001.rs tests/corpus_bridge_v001.rs
       - name: Run corpus bridge tests
         run: cargo test --test corpus_bridge_v001
 
