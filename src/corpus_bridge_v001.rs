@@ -41,7 +41,11 @@ impl fmt::Display for CorpusPackError {
 
 impl Error for CorpusPackError {}
 
-fn read_u64_be(bytes: &[u8], pos: &mut usize, error: CorpusPackError) -> Result<usize, CorpusPackError> {
+fn read_u64_be(
+    bytes: &[u8],
+    pos: &mut usize,
+    error: CorpusPackError,
+) -> Result<usize, CorpusPackError> {
     if *pos + 8 > bytes.len() {
         return Err(error);
     }
@@ -177,7 +181,11 @@ impl ByteLanguageModel {
     /// Observe one governed record. Fast state and predecessor history are reset
     /// at each record boundary, so the end of one example never learns an
     /// artificial edge into the next example.
-    fn observe_record(&self, state: &ByteLanguageState, record: &CorpusRecord) -> ByteLanguageState {
+    fn observe_record(
+        &self,
+        state: &ByteLanguageState,
+        record: &CorpusRecord,
+    ) -> ByteLanguageState {
         let mut working = ByteLanguageState::equalized_from(state);
         let mut predecessor: Option<u8> = None;
         for byte in record.input.iter().chain(record.target.iter()).copied() {
