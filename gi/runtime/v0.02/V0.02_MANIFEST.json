@@ -1,0 +1,15 @@
+{
+  "name": "GI Runtime Kernel",
+  "version": "v0.02",
+  "status": "DEVELOPMENT",
+  "parent_version": "v0.01 FROZEN",
+  "parent_source_manifest_sha256": "cc976dca17f1dd1bd5970d8b820fc8392604da20d0f1f3c591a14b2317c91937",
+  "integration_branch": "agent/gi-runtime-v002",
+  "base_branch": "agent/gi-v026-stage",
+  "pilot_ledger": {
+    "001": "GAP_CONFIRMED",
+    "002": "IDENTITY_POPULATION_PRIMITIVE_PRESENT",
+    "003": "DYNAMICS_GENERATED_STRUCTURE_PRESENT",
+    "004": "UTILITY_GOVERNED_STRUCTURAL_SURVIVAL_PRESENT"
+  }
+}
