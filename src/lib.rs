@@ -4,6 +4,7 @@
 //! Domain profiles live under `profiles` and supply their own state, evolution,
 //! adaptation, observation, and optional counterfactual semantics.
 
+pub mod corpus_bridge_v001;
 pub mod counterfactual;
 pub mod geometry;
 pub mod model;
