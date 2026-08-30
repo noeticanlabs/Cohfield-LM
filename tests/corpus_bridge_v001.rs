@@ -17,7 +17,10 @@ fn pack(records: &[(&[u8], &[u8])]) -> Vec<u8> {
 
 #[test]
 fn parses_training_data_pack_without_tokenizer_or_json_dependency() {
-    let blob = pack(&[(b"User: alpha\n\nAssistant: ", b"beta"), (b"prompt", b"answer")]);
+    let blob = pack(&[
+        (b"User: alpha\n\nAssistant: ", b"beta"),
+        (b"prompt", b"answer"),
+    ]);
     let records = parse_pack(&blob).expect("valid bridge pack must parse");
     assert_eq!(records.len(), 2);
     assert_eq!(records[0].input, b"User: alpha\n\nAssistant: ");
@@ -108,13 +111,7 @@ fn utf8_is_visible_as_bytes_not_as_preassigned_semantic_symbols() {
     assert_eq!(input, vec![0xCF, 0x80]);
     assert_eq!(target, vec![0xCE, 0xBB]);
 
-    let trained = model.train(
-        &[CorpusRecord {
-            input,
-            target,
-        }],
-        1,
-    );
+    let trained = model.train(&[CorpusRecord { input, target }], 1);
     assert!(trained.relation(0xCF, 0x80) > 0.0);
     assert!(trained.relation(0x80, 0xCE) > 0.0);
     assert!(trained.relation(0xCE, 0xBB) > 0.0);
