@@ -8,11 +8,14 @@
 use crate::corpus_bridge_v001::{CorpusRecord, BYTE_COUNT};
 use std::collections::HashMap;
 
-const PAIR_COUNT: usize = BYTE_COUNT * BYTE_COUNT;
 const RENORMALIZE_AT: f64 = 1e-100;
 
-fn pair_index(a: u8, b: u8) -> usize {
-    a as usize * BYTE_COUNT + b as usize
+fn pair_key(a: u8, b: u8) -> u16 {
+    ((a as u16) << 8) | b as u16
+}
+
+fn decode_pair(key: u16) -> (usize, usize) {
+    (((key >> 8) & 0xff) as usize, (key & 0xff) as usize)
 }
 
 fn path_key(a: u8, b: u8, c: u8) -> u32 {
@@ -21,7 +24,7 @@ fn path_key(a: u8, b: u8, c: u8) -> u32 {
 
 #[derive(Clone, Debug)]
 pub struct HistoryState {
-    pair_unscaled: Vec<f64>,
+    pair_unscaled: HashMap<u16, f64>,
     path_unscaled: HashMap<u32, f64>,
     scale: f64,
     pub adaptation_step: u64,
@@ -30,7 +33,7 @@ pub struct HistoryState {
 impl HistoryState {
     pub fn initial() -> Self {
         Self {
-            pair_unscaled: vec![0.0; PAIR_COUNT],
+            pair_unscaled: HashMap::new(),
             path_unscaled: HashMap::new(),
             scale: 1.0,
             adaptation_step: 0,
@@ -67,9 +70,10 @@ impl HistoryModel {
             return;
         }
         let scale = state.scale;
-        for value in &mut state.pair_unscaled {
+        state.pair_unscaled.retain(|_, value| {
             *value *= scale;
-        }
+            value.abs() > 1e-15
+        });
         state.path_unscaled.retain(|_, value| {
             *value *= scale;
             value.abs() > 1e-15
@@ -82,13 +86,16 @@ impl HistoryModel {
         state.adaptation_step += 1;
         self.renormalize_if_needed(state);
 
-        let inverse_scale = 1.0 / state.scale;
-        state.pair_unscaled[pair_index(prev1, current)] += self.learn_gain * inverse_scale;
+        let increment = self.learn_gain / state.scale;
+        *state
+            .pair_unscaled
+            .entry(pair_key(prev1, current))
+            .or_insert(0.0) += increment;
         if let Some(first) = prev2 {
             *state
                 .path_unscaled
                 .entry(path_key(first, prev1, current))
-                .or_insert(0.0) += self.learn_gain * inverse_scale;
+                .or_insert(0.0) += increment;
         }
     }
 
@@ -108,19 +115,6 @@ impl HistoryModel {
             }
         }
         state
-    }
-
-    fn pair_weight(state: &HistoryState, source: usize, target: usize) -> f64 {
-        state.pair_unscaled[source * BYTE_COUNT + target] * state.scale
-    }
-
-    fn path_weight(state: &HistoryState, a: u8, b: u8, target: u8) -> f64 {
-        state
-            .path_unscaled
-            .get(&path_key(a, b, target))
-            .copied()
-            .unwrap_or(0.0)
-            * state.scale
     }
 
     pub fn continuation_field(
@@ -150,16 +144,11 @@ impl HistoryModel {
         path_enabled: bool,
     ) -> Vec<f64> {
         let mut next = vec![0.0; BYTE_COUNT];
-        for source in 0..BYTE_COUNT {
+        for (&key, &unscaled) in &state.pair_unscaled {
+            let (source, target) = decode_pair(key);
             let activity = field[source];
-            if activity == 0.0 {
-                continue;
-            }
-            for target in 0..BYTE_COUNT {
-                let weight = Self::pair_weight(state, source, target);
-                if weight != 0.0 {
-                    next[target] += self.pair_gain * weight * activity;
-                }
+            if activity != 0.0 {
+                next[target] += self.pair_gain * (unscaled * state.scale) * activity;
             }
         }
         for index in 0..BYTE_COUNT {
@@ -168,9 +157,8 @@ impl HistoryModel {
         if path_enabled {
             if let (Some(first), Some(second)) = (prev2, prev1) {
                 for target in 0..BYTE_COUNT {
-                    let weight = Self::path_weight(state, first, second, target as u8);
-                    if weight != 0.0 {
-                        next[target] += self.path_gain * weight;
+                    if let Some(unscaled) = state.path_unscaled.get(&path_key(first, second, target as u8)) {
+                        next[target] += self.path_gain * (*unscaled * state.scale);
                     }
                 }
             }
@@ -179,6 +167,10 @@ impl HistoryModel {
             next[byte as usize] += self.input_gain;
         }
         next
+    }
+
+    pub fn learned_pairs(state: &HistoryState) -> usize {
+        state.pair_unscaled.len()
     }
 
     pub fn learned_paths(state: &HistoryState) -> usize {
