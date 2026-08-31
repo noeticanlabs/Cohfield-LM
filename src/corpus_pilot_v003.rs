@@ -1,19 +1,26 @@
 //! CF-LM Corpus Pilot v0.03 — trajectory-trace conditioning.
 //!
 //! This runtime preserves the first-order byte relation and adds a bounded
-//! exponentially retained visible-state trace. Global relation decay is
-//! represented by a shared scale factor so the persistent equations remain
-//! practical at corpus scale.
+//! exponentially retained visible-state trace. Relations are sparse and share
+//! one global decay scale, preserving the multiplicative-decay law efficiently.
 
 use crate::corpus_bridge_v001::{CorpusRecord, BYTE_COUNT};
+use std::collections::HashMap;
 
-const RELATION_COUNT: usize = BYTE_COUNT * BYTE_COUNT;
 const RENORMALIZE_AT: f64 = 1e-100;
+
+fn pair_key(a: u8, b: u8) -> u16 {
+    ((a as u16) << 8) | b as u16
+}
+
+fn decode_pair(key: u16) -> (usize, usize) {
+    (((key >> 8) & 0xff) as usize, (key & 0xff) as usize)
+}
 
 #[derive(Clone, Debug)]
 pub struct TraceState {
-    pair_unscaled: Vec<f64>,
-    omega_unscaled: Vec<f64>,
+    pair_unscaled: HashMap<u16, f64>,
+    omega_unscaled: HashMap<u16, f64>,
     scale: f64,
     pub adaptation_step: u64,
 }
@@ -21,8 +28,8 @@ pub struct TraceState {
 impl TraceState {
     pub fn initial() -> Self {
         Self {
-            pair_unscaled: vec![0.0; RELATION_COUNT],
-            omega_unscaled: vec![0.0; RELATION_COUNT],
+            pair_unscaled: HashMap::new(),
+            omega_unscaled: HashMap::new(),
             scale: 1.0,
             adaptation_step: 0,
         }
@@ -55,21 +62,19 @@ impl Default for TraceModel {
 }
 
 impl TraceModel {
-    fn relation_index(source: usize, target: usize) -> usize {
-        source * BYTE_COUNT + target
-    }
-
     fn renormalize_if_needed(&self, state: &mut TraceState) {
         if state.scale >= RENORMALIZE_AT {
             return;
         }
         let scale = state.scale;
-        for value in &mut state.pair_unscaled {
+        state.pair_unscaled.retain(|_, value| {
             *value *= scale;
-        }
-        for value in &mut state.omega_unscaled {
+            value.abs() > 1e-15
+        });
+        state.omega_unscaled.retain(|_, value| {
             *value *= scale;
-        }
+            value.abs() > 1e-15
+        });
         state.scale = 1.0;
     }
 
@@ -84,15 +89,19 @@ impl TraceModel {
         state.scale *= 1.0 - self.relation_decay;
         state.adaptation_step += 1;
         self.renormalize_if_needed(state);
-        let inverse_scale = 1.0 / state.scale;
+        let increment = self.learn_gain / state.scale;
 
-        state.pair_unscaled[Self::relation_index(previous as usize, current as usize)] +=
-            self.learn_gain * inverse_scale;
+        *state
+            .pair_unscaled
+            .entry(pair_key(previous, current))
+            .or_insert(0.0) += increment;
         for source in 0..BYTE_COUNT {
             let activity = history[source];
             if activity != 0.0 {
-                state.omega_unscaled[Self::relation_index(source, current as usize)] +=
-                    self.learn_gain * activity * inverse_scale;
+                *state
+                    .omega_unscaled
+                    .entry(pair_key(source as u8, current))
+                    .or_insert(0.0) += increment * activity;
             }
         }
     }
@@ -116,14 +125,6 @@ impl TraceModel {
             }
         }
         state
-    }
-
-    fn pair_weight(state: &TraceState, source: usize, target: usize) -> f64 {
-        state.pair_unscaled[Self::relation_index(source, target)] * state.scale
-    }
-
-    fn trace_weight(state: &TraceState, source: usize, target: usize) -> f64 {
-        state.omega_unscaled[Self::relation_index(source, target)] * state.scale
     }
 
     pub fn continuation_field(
@@ -151,21 +152,19 @@ impl TraceModel {
         trace_enabled: bool,
     ) -> Vec<f64> {
         let mut next = vec![0.0; BYTE_COUNT];
-        for source in 0..BYTE_COUNT {
-            if field[source] != 0.0 {
-                for target in 0..BYTE_COUNT {
-                    let weight = Self::pair_weight(state, source, target);
-                    if weight != 0.0 {
-                        next[target] += self.pair_gain * weight * field[source];
-                    }
-                }
+        for (&key, &unscaled) in &state.pair_unscaled {
+            let (source, target) = decode_pair(key);
+            let activity = field[source];
+            if activity != 0.0 {
+                next[target] += self.pair_gain * (unscaled * state.scale) * activity;
             }
-            if trace_enabled && history[source] != 0.0 {
-                for target in 0..BYTE_COUNT {
-                    let weight = Self::trace_weight(state, source, target);
-                    if weight != 0.0 {
-                        next[target] += self.trace_gain * weight * history[source];
-                    }
+        }
+        if trace_enabled {
+            for (&key, &unscaled) in &state.omega_unscaled {
+                let (source, target) = decode_pair(key);
+                let activity = history[source];
+                if activity != 0.0 {
+                    next[target] += self.trace_gain * (unscaled * state.scale) * activity;
                 }
             }
         }
@@ -176,5 +175,13 @@ impl TraceModel {
             next[byte as usize] += self.input_gain;
         }
         next
+    }
+
+    pub fn learned_pairs(state: &TraceState) -> usize {
+        state.pair_unscaled.len()
+    }
+
+    pub fn learned_trace_relations(state: &TraceState) -> usize {
+        state.omega_unscaled.len()
     }
 }
