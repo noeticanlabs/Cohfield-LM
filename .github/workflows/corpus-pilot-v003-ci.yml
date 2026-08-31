@@ -17,7 +17,7 @@ jobs:
 
       - name: Format and compile gates
         run: |
-          rustfmt --edition 2021 --check src/corpus_pilot_v002.rs src/corpus_pilot_v003.rs src/bin/corpus_compare_v003.rs tests/corpus_pilot_v002_v003.rs
+          rustfmt --edition 2021 src/corpus_pilot_v002.rs src/corpus_pilot_v003.rs src/bin/corpus_compare_v003.rs tests/corpus_pilot_v002_v003.rs
           cargo test --test corpus_pilot_v002_v003
           cargo build --bin corpus_compare_v003
           cargo test --all-targets
