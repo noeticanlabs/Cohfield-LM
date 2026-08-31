@@ -1,22 +1,30 @@
 //! CF-LM Corpus Pilot v0.03 — trajectory-trace conditioning.
 //!
-//! Preregistered successor to v0.02. This module is intentionally not wired
-//! into the crate yet; v0.02 must complete its execution gate before v0.03 is
-//! interpreted comparatively.
+//! This runtime preserves the first-order byte relation and adds a bounded
+//! exponentially retained visible-state trace. Global relation decay is
+//! represented by a shared scale factor so the persistent equations remain
+//! practical at corpus scale.
 
 use crate::corpus_bridge_v001::{CorpusRecord, BYTE_COUNT};
 
+const RELATION_COUNT: usize = BYTE_COUNT * BYTE_COUNT;
+const RENORMALIZE_AT: f64 = 1e-100;
+
 #[derive(Clone, Debug)]
 pub struct TraceState {
-    pub pair: Vec<f64>,
-    pub omega: Vec<f64>,
+    pair_unscaled: Vec<f64>,
+    omega_unscaled: Vec<f64>,
+    scale: f64,
+    pub adaptation_step: u64,
 }
 
 impl TraceState {
     pub fn initial() -> Self {
         Self {
-            pair: vec![0.0; BYTE_COUNT * BYTE_COUNT],
-            omega: vec![0.0; BYTE_COUNT * BYTE_COUNT],
+            pair_unscaled: vec![0.0; RELATION_COUNT],
+            omega_unscaled: vec![0.0; RELATION_COUNT],
+            scale: 1.0,
+            adaptation_step: 0,
         }
     }
 }
@@ -51,30 +59,40 @@ impl TraceModel {
         source * BYTE_COUNT + target
     }
 
-    fn decay_relations(&self, state: &mut TraceState) {
-        let d = 1.0 - self.relation_decay;
-        for value in &mut state.pair {
-            *value *= d;
+    fn renormalize_if_needed(&self, state: &mut TraceState) {
+        if state.scale >= RENORMALIZE_AT {
+            return;
         }
-        for value in &mut state.omega {
-            *value *= d;
+        let scale = state.scale;
+        for value in &mut state.pair_unscaled {
+            *value *= scale;
+        }
+        for value in &mut state.omega_unscaled {
+            *value *= scale;
+        }
+        state.scale = 1.0;
+    }
+
+    fn update_trace(&self, history: &mut [f64], field: &[f64]) {
+        let retention = self.history_retention;
+        for index in 0..BYTE_COUNT {
+            history[index] = retention * history[index] + (1.0 - retention) * field[index];
         }
     }
 
-    fn update_trace(&self, h: &mut [f64], x: &[f64]) {
-        let r = self.history_retention;
-        for i in 0..BYTE_COUNT {
-            h[i] = r * h[i] + (1.0 - r) * x[i];
-        }
-    }
+    fn adapt(&self, state: &mut TraceState, history: &[f64], previous: u8, current: u8) {
+        state.scale *= 1.0 - self.relation_decay;
+        state.adaptation_step += 1;
+        self.renormalize_if_needed(state);
+        let inverse_scale = 1.0 / state.scale;
 
-    fn adapt(&self, state: &mut TraceState, h: &[f64], previous: u8, current: u8) {
-        self.decay_relations(state);
-        state.pair[Self::relation_index(previous as usize, current as usize)] += self.learn_gain;
+        state.pair_unscaled[Self::relation_index(previous as usize, current as usize)] +=
+            self.learn_gain * inverse_scale;
         for source in 0..BYTE_COUNT {
-            let activity = h[source];
+            let activity = history[source];
             if activity != 0.0 {
-                state.omega[Self::relation_index(source, current as usize)] += self.learn_gain * activity;
+                state.omega_unscaled[Self::relation_index(source, current as usize)] +=
+                    self.learn_gain * activity * inverse_scale;
             }
         }
     }
@@ -83,21 +101,29 @@ impl TraceModel {
         let mut state = TraceState::initial();
         for _ in 0..epochs {
             for record in records {
-                let mut x = vec![0.0; BYTE_COUNT];
-                let mut h = vec![0.0; BYTE_COUNT];
-                let mut previous: Option<u8> = None;
+                let mut field = vec![0.0; BYTE_COUNT];
+                let mut history = vec![0.0; BYTE_COUNT];
+                let mut previous = None;
                 for byte in record.input.iter().chain(record.target.iter()).copied() {
-                    self.update_trace(&mut h, &x);
+                    self.update_trace(&mut history, &field);
                     if let Some(prev) = previous {
-                        self.adapt(&mut state, &h, prev, byte);
+                        self.adapt(&mut state, &history, prev, byte);
                     }
-                    x.fill(0.0);
-                    x[byte as usize] = 1.0;
+                    field.fill(0.0);
+                    field[byte as usize] = 1.0;
                     previous = Some(byte);
                 }
             }
         }
         state
+    }
+
+    fn pair_weight(state: &TraceState, source: usize, target: usize) -> f64 {
+        state.pair_unscaled[Self::relation_index(source, target)] * state.scale
+    }
+
+    fn trace_weight(state: &TraceState, source: usize, target: usize) -> f64 {
+        state.omega_unscaled[Self::relation_index(source, target)] * state.scale
     }
 
     pub fn continuation_field(
@@ -106,43 +132,45 @@ impl TraceModel {
         input: &[u8],
         trace_enabled: bool,
     ) -> Vec<f64> {
-        let mut x = vec![0.0; BYTE_COUNT];
-        let mut h = vec![0.0; BYTE_COUNT];
+        let mut field = vec![0.0; BYTE_COUNT];
+        let mut history = vec![0.0; BYTE_COUNT];
         for byte in input.iter().copied() {
-            self.update_trace(&mut h, &x);
-            x = self.step(state, &x, &h, Some(byte), trace_enabled);
+            self.update_trace(&mut history, &field);
+            field = self.step(state, &field, &history, Some(byte), trace_enabled);
         }
-        self.update_trace(&mut h, &x);
-        self.step(state, &x, &h, None, trace_enabled)
+        self.update_trace(&mut history, &field);
+        self.step(state, &field, &history, None, trace_enabled)
     }
 
     fn step(
         &self,
         state: &TraceState,
-        x: &[f64],
-        h: &[f64],
+        field: &[f64],
+        history: &[f64],
         input: Option<u8>,
         trace_enabled: bool,
     ) -> Vec<f64> {
         let mut next = vec![0.0; BYTE_COUNT];
         for source in 0..BYTE_COUNT {
-            if x[source] != 0.0 {
+            if field[source] != 0.0 {
                 for target in 0..BYTE_COUNT {
-                    next[target] += self.pair_gain
-                        * state.pair[Self::relation_index(source, target)]
-                        * x[source];
+                    let weight = Self::pair_weight(state, source, target);
+                    if weight != 0.0 {
+                        next[target] += self.pair_gain * weight * field[source];
+                    }
                 }
             }
-            if trace_enabled && h[source] != 0.0 {
+            if trace_enabled && history[source] != 0.0 {
                 for target in 0..BYTE_COUNT {
-                    next[target] += self.trace_gain
-                        * state.omega[Self::relation_index(source, target)]
-                        * h[source];
+                    let weight = Self::trace_weight(state, source, target);
+                    if weight != 0.0 {
+                        next[target] += self.trace_gain * weight * history[source];
+                    }
                 }
             }
         }
-        for i in 0..BYTE_COUNT {
-            next[i] += self.beta * x[i];
+        for index in 0..BYTE_COUNT {
+            next[index] += self.beta * field[index];
         }
         if let Some(byte) = input {
             next[byte as usize] += self.input_gain;
