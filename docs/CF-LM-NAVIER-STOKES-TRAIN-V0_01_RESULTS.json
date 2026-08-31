@@ -1,0 +1,54 @@
+{
+  "experiment": "CF-LM Navier-Stokes Training v0.01",
+  "evidence_class": "equivalent-law sandbox run; repo-native Rust replay pending",
+  "dataset": {
+    "schema": "navier_stokes.machine_readable_formula_dataset.v1",
+    "records": 263,
+    "train": 204,
+    "validation": 23,
+    "test": 36,
+    "families": 15,
+    "statuses": 4,
+    "validation_status": "PASS"
+  },
+  "task": {
+    "input": "Formula: <formula_raw>\\nFamily: ",
+    "target": "primary_family UTF-8 bytes"
+  },
+  "model": {
+    "surface_states": 256,
+    "beta": 0.5,
+    "input_gain": 0.5,
+    "relational_gain": 0.2,
+    "psi_decay": 0.02,
+    "psi_gain": 0.08
+  },
+  "epoch_1": {
+    "adaptation_events": 21091,
+    "learned_nonzero_relations": 843,
+    "validation": {
+      "mean_correct_activation": 0.004969870511499436,
+      "mean_rank": 21.08695652173913,
+      "top1_or_tied_rate": 0.0,
+      "pairing_activation_delta": -0.00037680359053006776,
+      "prompt_pair_activation_delta": 0.00002375117282945368,
+      "boundary_activation_delta": 0.00007655830612020038
+    },
+    "test": {
+      "mean_correct_activation": 0.005172096056458408,
+      "mean_rank": 20.583333333333332,
+      "top1_or_tied_rate": 0.0,
+      "pairing_activation_delta": 0.00044845185629728817,
+      "prompt_pair_activation_delta": 0.00001912220689960671,
+      "boundary_activation_delta": 0.00006407980274767897
+    }
+  },
+  "epoch_sweep": {
+    "epochs": [1, 4, 16],
+    "adaptation_events": [21091, 84364, 337456],
+    "holdout_metrics_changed_at_reported_precision": false
+  },
+  "result": "NULL_BOUNDARY_EXPOSED",
+  "interpretation": "The first-order byte relation substrate absorbed corpus statistics but did not demonstrate robust prompt-conditioned formula-family prediction. More epochs did not improve measured holdout behavior.",
+  "claim_ceiling": "No claim of mathematical understanding, Navier-Stokes reasoning, theorem validity, semantic classification competence, or language competence."
+}
