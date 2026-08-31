@@ -1,0 +1,59 @@
+name: CF-LM Corpus Pilots v0.02-v0.03 CI
+
+on:
+  push:
+    branches:
+      - agent/cf-lm-corpus-pilot-v003
+  workflow_dispatch:
+
+jobs:
+  history-comparison:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Format and compile gates
+        run: |
+          rustfmt --edition 2021 --check src/corpus_pilot_v002.rs src/corpus_pilot_v003.rs src/bin/corpus_compare_v003.rs tests/corpus_pilot_v002_v003.rs
+          cargo test --test corpus_pilot_v002_v003
+          cargo build --bin corpus_compare_v003
+          cargo test --all-targets
+
+      - name: Recover exact frozen Navier-Stokes packs from parent receipt
+        shell: bash
+        run: |
+          mkdir -p /tmp/cflm-ns
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, base64
+          text = Path('.github/workflows/navier-stokes-native-v001.yml').read_text()
+          m = re.search(r"packs\.tar\.gz\.b64 <<'EOF'\n(.*?)\n\s*EOF", text, flags=re.S)
+          if not m:
+              raise SystemExit('frozen parent pack payload not found')
+          payload = ''.join(line.strip() for line in m.group(1).splitlines())
+          Path('/tmp/cflm-ns/packs.tar.gz').write_bytes(base64.b64decode(payload))
+          PY
+          echo 'c36e212e6a4240b797c0c6c9f1ebfa38017b0c91ebc703f3e591267616625546  /tmp/cflm-ns/packs.tar.gz' | sha256sum -c -
+          tar -xzf /tmp/cflm-ns/packs.tar.gz -C /tmp/cflm-ns
+          echo '4d0ec2bea1b856fe513f1af5469f0757d12245a1e5fb163693d275420e872fe5  /tmp/cflm-ns/train.cflm' | sha256sum -c -
+          echo 'e97b96d4bb26044266759f9797eac0facfe033f976fd095e06600b295a81568b  /tmp/cflm-ns/validation.cflm' | sha256sum -c -
+          echo '8324b3f9aa978f7959f4363ece7378480d2ba9c87e53382c236e649b78d06b64  /tmp/cflm-ns/test.cflm' | sha256sum -c -
+
+      - name: Run matched v0.02-v0.03 training and holdout comparison
+        shell: bash
+        run: |
+          mkdir -p evidence/corpus_pilot_v003
+          for e in 1 4 16; do
+            cargo run --quiet --bin corpus_compare_v003 -- /tmp/cflm-ns/train.cflm /tmp/cflm-ns/validation.cflm "$e" | tee "evidence/corpus_pilot_v003/validation_e${e}.json"
+            cargo run --quiet --bin corpus_compare_v003 -- /tmp/cflm-ns/train.cflm /tmp/cflm-ns/test.cflm "$e" | tee "evidence/corpus_pilot_v003/test_e${e}.json"
+          done
+          sha256sum evidence/corpus_pilot_v003/*.json | tee evidence/corpus_pilot_v003/SHA256SUMS.txt
+
+      - name: Upload scientific receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf-lm-corpus-pilot-v003-receipts
+          path: evidence/corpus_pilot_v003/
